@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-6 sm:px-0">
+    <h1 class="text-3xl font-bold text-scout-800 mb-8 text-center">Timeline Eventi</h1>
+
+    <div class="flow-root">
+        <ul role="list" class="-mb-8">
+            {% for c in completions %}
+            <li>
+                <div class="relative pb-8">
+                    {% if not loop.last %}
+                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                    {% endif %}
+                    <div class="relative flex space-x-3">
+                        <div>
+                            <span
+                                class="h-8 w-8 rounded-full bg-scout-500 flex items-center justify-center ring-8 ring-white">
+                                <!-- Icon based on challenge type or just a check -->
+                                <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div
+                            class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4 glass p-4 rounded-lg shadow-sm ml-2">
+                            <div>
+                                <p class="text-sm text-gray-500">
+                                    <span class="font-medium text-gray-900">{{ c.pattuglia.name }}</span>
+                                    <span class="text-xs text-gray-400">
+                                        {% if c.pattuglia.unita.sottocampo == 'Alpino' %}🐐{% elif
+                                        c.pattuglia.unita.sottocampo == 'Prealpino' %}🦔{% elif
+                                        c.pattuglia.unita.sottocampo == 'Montano' %}🐻{% elif
+                                        c.pattuglia.unita.sottocampo == 'Collinare' %}🐦{% endif %}
+                                    </span>
+                                    ha completato <span class="font-medium text-gray-900">{{ c.challenge.name }}</span>
+                                </p>
+                                {% if c.challenge.is_fungo %}
+                                <p class="text-xs text-orange-500 font-semibold mt-1">🍄 Sfida Fungo!</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                <time datetime="{{ c.timestamp }}">{{ c.timestamp.strftime('%H:%M') }}</time>
+                                <div class="font-bold text-scout-600">+{{ c.challenge.points }} pt</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+        <h1 class="text-4xl font-extrabold text-scout-800 tracking-tight mb-4 md:mb-0">
+            Classifica Generale
+        </h1>
+
+        <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <form action="/" method="get" class="flex items-center space-x-2 glass p-2 rounded-lg shadow-sm">
+
+                <!-- Sottocampo Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="sottocampo_filter" class="text-sm font-medium text-gray-700">Sottocampo:</label>
+                    <select name="sottocampo_filter" id="sottocampo_filter" onchange="this.form.submit()"
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-scout-500 focus:border-scout-500 sm:text-sm rounded-md bg-white/80">
+                        <option value="">Tutti</option>
+                        {% for s in sottocampi %}
+                        <option value="{{ s }}" {% if current_sottocampo_filter==s %}selected{% endif %}>{{ s }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if user.role in ['tech', 'admin'] %}
+                <a href="/export/ranking"
+                    class="bg-scout-600 hover:bg-scout-700 text-white font-bold py-2 px-4 rounded inline-flex items-center transition-colors duration-150 ml-2">
+                    <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                    </svg>
+                    <span>CSV</span>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg glass">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-scout-50/80">
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Posizione
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Pattuglia
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Unità
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Punteggio
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white/40 divide-y divide-gray-200">
+                {% for p in pattuglie %}
+                <tr class="hover:bg-white/60 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            {% if p.rank == 1 %}
+                            <span class="text-2xl mr-2">🥇</span>
+                            {% elif p.rank == 2 %}
+                            <span class="text-2xl mr-2">🥈</span>
+                            {% elif p.rank == 3 %}
+                            <span class="text-2xl mr-2">🥉</span>
+                            {% else %}
+                            <span class="text-lg font-bold text-gray-500 w-8 text-center">{{ p.rank }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ p.name }}</div>
+                        <div class="text-sm text-gray-500">CP: {{ p.capo_pattuglia }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span
+                            class="px-2 inline-flex text-xs leading-5 font-bold rounded-full bg-scout-100 text-scout-800 border border-scout-300">
+                            {{ p.unita.name }}
+                        </span>
+                        <div class="text-xs text-gray-500 mt-1 flex items-center">
+                            {% if p.unita.sottocampo == 'Alpino' %}
+                            <span class="text-lg mr-1">🐐</span>
+                            {% elif p.unita.sottocampo == 'Prealpino' %}
+                            <span class="text-lg mr-1">🦔</span>
+                            {% elif p.unita.sottocampo == 'Montano' %}
+                            <span class="text-lg mr-1">🐻</span>
+                            {% elif p.unita.sottocampo == 'Collinare' %}
+                            <span class="text-lg mr-1">🐦</span>
+                            {% endif %}
+                            {{ p.unita.sottocampo }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold text-lg">
+                        {{ p.current_score }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
