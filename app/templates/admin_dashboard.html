@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-extrabold text-scout-800 tracking-tight">Amministrazione</h1>
+    </div>
+
+    <!-- Admin Tabs -->
+    <div class="mb-6 border-b border-scout-300">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="/admin"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'dashboard' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Dashboard & Log
+            </a>
+            <a href="/admin/pattuglie"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'pattuglie' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Pattuglie
+            </a>
+            <a href="/admin/challenges"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Sfide
+            </a>
+            <a href="/admin/users"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'users' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Utenti
+            </a>
+        </nav>
+    </div>
+
+    <!-- Log -->
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
+        <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
+            <h3 class="text-lg leading-6 font-bold text-scout-900">Log Attività Recenti (Tutti)</h3>
+        </div>
+        <ul role="list" class="divide-y divide-scout-200 bg-white/60">
+            {% for c in completions %}
+            <li class="px-4 py-4 sm:px-6 hover:bg-white/80 transition-colors duration-150">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <p class="text-sm font-bold text-scout-800 truncate">
+                            {{ c.pattuglia.name }} <span class="font-normal text-gray-600">ha completato</span> {{
+                            c.challenge.name }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {{ c.timestamp.strftime('%d/%m/%Y %H:%M') }} | <span class="text-scout-600 font-bold">+{{
+                                c.challenge.points }} pt</span>
+                        </p>
+                    </div>
+                    <div class="ml-2 flex-shrink-0 flex">
+                        <form action="/admin/rollback/{{ c.id }}" method="post"
+                            onsubmit="return confirm('Sei sicuro di voler annullare questa azione?');">
+                            <button type="submit"
+                                class="px-3 py-1 text-xs font-bold text-red-700 bg-red-100 rounded-full hover:bg-red-200 border border-red-200">
+                                Annulla
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

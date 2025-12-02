@@ -1,6 +1,7 @@
 from app.database import engine, Base, SessionLocal
 from app.models import Unita, Pattuglia, Challenge, Completion, User
 from passlib.context import CryptContext
+from datetime import datetime
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -90,6 +91,40 @@ def init_db():
         print("Challenges populated from CSV.")
     else:
         print("challenges.csv not found, skipping challenges population.")
+
+    # --- Completions Population from CSV ---
+    if os.path.exists("completions.csv"):
+        print("Reading completions from completions.csv...")
+        with open("completions.csv", "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                p_name = row["PattugliaName"]
+                c_name = row["ChallengeName"]
+                timestamp_str = row["Timestamp"]
+                
+                pattuglia = db.query(Pattuglia).filter(Pattuglia.name == p_name).first()
+                challenge = db.query(Challenge).filter(Challenge.name == c_name).first()
+                
+                if pattuglia and challenge:
+                    timestamp = datetime.fromisoformat(timestamp_str)
+                    
+                    # Check if already exists (optional, but good for idempotency if running multiple times without drop)
+                    # Since we drop tables in reset_db, we can just add.
+                    new_completion = Completion(
+                        pattuglia_id=pattuglia.id,
+                        challenge_id=challenge.id,
+                        timestamp=timestamp
+                    )
+                    db.add(new_completion)
+                    
+                    # Update score
+                    pattuglia.current_score += challenge.points
+                else:
+                    print(f"Warning: Pattuglia '{p_name}' or Challenge '{c_name}' not found.")
+        db.commit()
+        print("Completions populated from CSV.")
+    else:
+        print("completions.csv not found, skipping completions population.")
 
     # --- Users Population ---
     # 1. Admin

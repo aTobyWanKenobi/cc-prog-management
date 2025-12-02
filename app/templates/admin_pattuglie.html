@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-extrabold text-scout-800 tracking-tight">Amministrazione</h1>
+    </div>
+
+    <!-- Admin Tabs -->
+    <div class="mb-6 border-b border-scout-300">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="/admin"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'dashboard' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Dashboard & Log
+            </a>
+            <a href="/admin/pattuglie"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'pattuglie' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Pattuglie
+            </a>
+            <a href="/admin/challenges"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Sfide
+            </a>
+            <a href="/admin/users"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'users' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                Gestione Utenti
+            </a>
+        </nav>
+    </div>
+
+    <!-- Quick Create Pattuglia -->
+    <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500 mb-8">
+        <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Pattuglia</h2>
+        <form action="/admin/pattuglie" method="post" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" name="name" placeholder="Nome Pattuglia" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                <input type="text" name="capo_pattuglia" placeholder="Capo Pattuglia" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                <select name="unita_id" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                    {% for u in unita %}
+                    <option value="{{ u.id }}">{{ u.name }} ({{ u.sottocampo }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
+                Crea Pattuglia
+            </button>
+        </form>
+    </div>
+
+    <!-- Pattuglie List -->
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto"
+        x-data="{ search: '' }">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <input type="text" x-model="search" placeholder="Cerca pattuglia..."
+                class="shadow-sm focus:ring-scout-500 focus:border-scout-500 block w-full sm:text-sm border-gray-300 rounded-md p-2">
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-scout-100">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Capo
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Unità
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">
+                        Azioni</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white/60 divide-y divide-gray-200">
+                {% for p in pattuglie %}
+                <tr x-show="search === '' || $el.textContent.toLowerCase().includes(search.toLowerCase())">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ p.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.capo_pattuglia }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.unita.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="/admin/pattuglie/{{ p.id }}"
+                            class="text-scout-600 hover:text-scout-900 font-bold mr-2">Modifica & Log</a>
+                        <form action="/admin/pattuglie/{{ p.id }}/delete" method="post" class="inline"
+                            onsubmit="return confirm('Eliminare questa pattuglia?');">
+                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,46 +1,100 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-lg mx-auto px-4 py-6 sm:px-0">
-    <div class="glass p-6 rounded-lg shadow-sm">
-        <h2 class="text-xl font-bold mb-4 text-scout-800">Modifica Sfida</h2>
+<div class="px-4 py-6 sm:px-0">
+    <div class="mb-6">
+        <a href="/admin/challenges" class="text-scout-600 hover:text-scout-800 font-bold">← Torna a Gestione Sfide</a>
+    </div>
+
+    <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500 mb-8">
+        <h2 class="text-xl font-bold mb-4 text-scout-800">Modifica Sfida: {{ challenge.name }}</h2>
         <form action="/admin/challenges/{{ challenge.id }}/edit" method="post" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Nome Sfida</label>
-                <input type="text" name="name" value="{{ challenge.name }}" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Descrizione</label>
-                <textarea name="description" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">{{ challenge.description }}</textarea>
-            </div>
-            <!-- Points not editable as requested -->
-            <div class="flex space-x-4">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700">Punti (Sola Lettura)</label>
-                    <input type="number" value="{{ challenge.points }}" disabled
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 sm:text-sm p-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nome</label>
+                    <input type="text" name="name" value="{{ challenge.name }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                 </div>
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700">Token</label>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Descrizione</label>
+                    <textarea name="description" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">{{ challenge.description }}</textarea>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Punti</label>
+                    <input type="number" name="points" value="{{ challenge.points }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Token Ricompensa</label>
                     <input type="number" name="reward_tokens" value="{{ challenge.reward_tokens }}"
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                 </div>
+                <div class="flex items-center mt-6">
+                    <input type="checkbox" name="is_fungo" value="true" {% if challenge.is_fungo %}checked{% endif %}
+                        class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
+                    <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
+                </div>
             </div>
-            <div class="flex items-center">
-                <input type="checkbox" name="is_fungo" value="true" {% if challenge.is_fungo %}checked{% endif %}
-                    class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
-                <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
+
+            <!-- Retroactive Update Toggle -->
+            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" name="retroactive_update" value="true"
+                            class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label class="font-medium text-yellow-800">Aggiornamento Retroattivo</label>
+                        <p class="text-yellow-700">Se selezioni questa opzione e cambi il punteggio, i punti verranno
+                            ricalcolati per TUTTE le pattuglie che hanno già completato questa sfida. Usare con cautela!
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="flex justify-between">
-                <a href="/admin" class="text-gray-600 hover:text-gray-900 font-medium py-2">Annulla</a>
-                <button type="submit"
-                    class="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
-                    Salva Modifiche
-                </button>
-            </div>
+
+            <button type="submit"
+                class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700"
+                onclick="return confirm('Salvare le modifiche? Se hai selezionato l\'aggiornamento retroattivo, i punteggi verranno ricalcolati.');">
+                Salva Modifiche
+            </button>
         </form>
+    </div>
+
+    <!-- Specific Log -->
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
+        <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
+            <h3 class="text-lg leading-6 font-bold text-scout-900">Log Completamenti: {{ challenge.name }}</h3>
+        </div>
+        <ul role="list" class="divide-y divide-scout-200 bg-white/60">
+            {% for c in completions %}
+            <li class="px-4 py-4 sm:px-6 hover:bg-white/80 transition-colors duration-150">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <p class="text-sm font-bold text-scout-800 truncate">
+                            Completata da: {{ c.pattuglia.name }} ({{ c.pattuglia.unita.name }})
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {{ c.timestamp.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                    </div>
+                    <div class="ml-2 flex-shrink-0 flex">
+                        <form action="/admin/rollback/{{ c.id }}" method="post"
+                            onsubmit="return confirm('Sei sicuro di voler annullare questa azione?');">
+                            <button type="submit"
+                                class="px-3 py-1 text-xs font-bold text-red-700 bg-red-100 rounded-full hover:bg-red-200 border border-red-200">
+                                Elimina
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% else %}
+            <li class="px-4 py-4 sm:px-6 text-sm text-gray-500">Nessun completamento registrato.</li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
 {% endblock %}
