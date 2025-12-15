@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
@@ -15,8 +16,6 @@ from app.routers import admin, public
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-import os
 
 if not os.path.exists("app/static"):
     os.makedirs("app/static")
