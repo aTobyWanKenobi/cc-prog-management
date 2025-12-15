@@ -24,6 +24,9 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-groups --all-extras --dev
 
+    - name: Check Dependencies (Deptry)
+      run: uv run deptry .
+
     - name: Lint and Format (Ruff)
       run: |
         uv run ruff check .
