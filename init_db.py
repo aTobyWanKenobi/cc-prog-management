@@ -1,7 +1,7 @@
 from app.database import engine, Base, SessionLocal
-from app.models import Unita, Pattuglia, Challenge, Completion, User
+from app.models import Unita, Pattuglia, Challenge, Completion, User, Terreno, Prenotazione
 from passlib.context import CryptContext
-from datetime import datetime
+from datetime import datetime, timedelta
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -123,8 +123,72 @@ def init_db():
                     print(f"Warning: Pattuglia '{p_name}' or Challenge '{c_name}' not found.")
         db.commit()
         print("Completions populated from CSV.")
+        db.commit()
+        print("Completions populated from CSV.")
     else:
         print("completions.csv not found, skipping completions population.")
+
+    # --- Terreni Population from CSV ---
+    if os.path.exists("terreni.csv"):
+        print("Reading terrains from terreni.csv...")
+        with open("terreni.csv", "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                name = row["Name"]
+                tags = row["Tags"]
+                lat = row["CenterLat"]
+                lon = row["CenterLon"]
+                poly = row["Polygon"]
+                
+                exists = db.query(Terreno).filter(Terreno.name == name).first()
+                if not exists:
+                    new_terreno = Terreno(
+                        name=name,
+                        tags=tags,
+                        center_lat=lat,
+                        center_lon=lon,
+                        polygon=poly
+                    )
+                    db.add(new_terreno)
+        db.commit()
+        print("Terrains populated from CSV.")
+    else:
+        print("terreni.csv not found, skipping terrain population.")
+
+    # --- Prenotazioni Population from CSV ---
+    if os.path.exists("prenotazioni.csv"):
+        print("Reading reservations from prenotazioni.csv...")
+        with open("prenotazioni.csv", "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                t_name = row["TerrenoName"]
+                u_name = row["UnitName"]
+                start_time_str = row["StartTime"]
+                duration = int(row["Duration"])
+                status = row["Status"]
+                
+                terreno = db.query(Terreno).filter(Terreno.name == t_name).first()
+                unita = db.query(Unita).filter(Unita.name == u_name).first()
+                
+                if terreno and unita:
+                    start_time = datetime.fromisoformat(start_time_str)
+                    end_time = start_time + timedelta(hours=duration)
+                    
+                    new_prenotazione = Prenotazione(
+                        terreno_id=terreno.id,
+                        unita_id=unita.id,
+                        start_time=start_time,
+                        end_time=end_time,
+                        duration=duration,
+                        status=status
+                    )
+                    db.add(new_prenotazione)
+                else:
+                    print(f"Warning: Terreno '{t_name}' or Unit '{u_name}' not found.")
+        db.commit()
+        print("Reservations populated from CSV.")
+    else:
+        print("prenotazioni.csv not found, skipping reservation population.")
 
     # --- Users Population ---
     # 1. Admin

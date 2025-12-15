@@ -11,19 +11,15 @@
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <a href="/admin"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'dashboard' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Dashboard & Log
+                Dashboard
             </a>
             <a href="/admin/pattuglie"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'pattuglie' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Gestione Pattuglie
+                Pattuglie
             </a>
             <a href="/admin/challenges"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Gestione Sfide
-            </a>
-            <a href="/admin/challenges"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Gestione Sfide
+                Sfide
             </a>
             <a href="/admin/terreni"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'terreni' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
@@ -31,72 +27,70 @@
             </a>
             <a href="/admin/users"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'users' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Gestione Utenti
+                Utenti
             </a>
         </nav>
     </div>
 
-    <!-- Quick Create Challenge -->
+    <!-- Quick Create Terreno -->
     <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500 mb-8">
-        <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Sfida</h2>
-        <form action="/admin/challenges" method="post" class="space-y-4">
+        <h2 class="text-xl font-bold mb-4 text-scout-800">Nuovo Terreno</h2>
+        <form action="/admin/terreni" method="post" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" name="name" placeholder="Nome Sfida" required
+                <input type="text" name="name" placeholder="Nome Terreno" required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                <textarea name="description" placeholder="Descrizione" required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80"></textarea>
+                <input type="text" name="tags" placeholder="Tags (es: SPORT, BOSCO)" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <input type="number" name="points" placeholder="Punti" required
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" name="center_lat" placeholder="Latitudine Centro" required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                <input type="number" name="reward_tokens" placeholder="Token" value="0"
+                <input type="text" name="center_lon" placeholder="Longitudine Centro" required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                <div class="flex items-center">
-                    <input type="checkbox" name="is_fungo" value="true"
-                        class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
-                    <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
-                </div>
+                <input type="text" name="polygon" placeholder="Poligono (JSON)" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
             </div>
             <button type="submit"
                 class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
-                Crea Sfida
+                Crea Terreno
             </button>
         </form>
     </div>
 
-    <!-- Challenges List -->
-    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto"
-        x-data="{ search: '' }">
-        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <input type="text" x-model="search" placeholder="Cerca sfida..."
-                class="shadow-sm focus:ring-scout-500 focus:border-scout-500 block w-full sm:text-sm border-gray-300 rounded-md p-2">
-        </div>
+    <!-- Terreni List -->
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-scout-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Punti
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Tags
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Fungo
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Centro
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">
                         Azioni</th>
                 </tr>
             </thead>
             <tbody class="bg-white/60 divide-y divide-gray-200">
-                {% for c in challenges %}
-                <tr x-show="search === '' || $el.textContent.toLowerCase().includes(search.toLowerCase())">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.points }}</td>
+                {% for t in terreni %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ t.name }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if c.is_fungo %}🍄{% endif %}
+                        {% for tag in t.tags.split(',') %}
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {{ tag }}
+                        </span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ t.center_lat }}, {{ t.center_lon }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="/admin/challenges/{{ c.id }}"
-                            class="text-scout-600 hover:text-scout-900 font-bold mr-2">Modifica & Log</a>
-                        <form action="/admin/challenges/{{ c.id }}/delete" method="post" class="inline"
-                            onsubmit="return confirm('Eliminare questa sfida?');">
+                        <a href="/admin/terreni/{{ t.id }}"
+                            class="text-scout-600 hover:text-scout-900 font-bold mr-2">Modifica & Prenotazioni</a>
+                        <form action="/admin/terreni/{{ t.id }}/delete" method="post" class="inline"
+                            onsubmit="return confirm('Eliminare questo terreno?');">
                             <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
                         </form>
                     </td>

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
-from app.models import Pattuglia, Challenge, Unita, Completion, User
+from app.models import Pattuglia, Challenge, Unita, Completion, User, Terreno, Prenotazione
 from app.auth import get_admin_user
 
 router = APIRouter(
@@ -220,6 +220,89 @@ async def reset_user_password(user_id: int, password: str = Form(...), db: Sessi
         user.password_hash = pwd_context.hash(password)
         db.commit()
     return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+
+# --- Terreni Management ---
+
+@router.get("/terreni", response_class=HTMLResponse)
+async def admin_terreni(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    terreni = db.query(Terreno).all()
+    return templates.TemplateResponse("admin_terreni.html", {
+        "request": request,
+        "user": user,
+        "terreni": terreni,
+        "active_tab": "terreni"
+    })
+
+@router.post("/terreni")
+async def create_terreno(
+    request: Request,
+    name: str = Form(...),
+    tags: str = Form(...),
+    center_lat: str = Form(...),
+    center_lon: str = Form(...),
+    polygon: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user)
+):
+    new_terreno = Terreno(
+        name=name,
+        tags=tags,
+        center_lat=center_lat,
+        center_lon=center_lon,
+        polygon=polygon
+    )
+    db.add(new_terreno)
+    db.commit()
+    return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.get("/terreni/{terreno_id}", response_class=HTMLResponse)
+async def edit_terreno(request: Request, terreno_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    if not terreno:
+        raise HTTPException(status_code=404, detail="Terreno not found")
+    
+    prenotazioni = db.query(Prenotazione).filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time.desc()).all()
+    
+    return templates.TemplateResponse("edit_terreno.html", {
+        "request": request,
+        "user": user,
+        "terreno": terreno,
+        "prenotazioni": prenotazioni,
+        "active_tab": "terreni"
+    })
+
+@router.post("/terreni/{terreno_id}")
+async def update_terreno(
+    request: Request,
+    terreno_id: int,
+    name: str = Form(...),
+    tags: str = Form(...),
+    center_lat: str = Form(...),
+    center_lon: str = Form(...),
+    polygon: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user)
+):
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    if not terreno:
+        raise HTTPException(status_code=404, detail="Terreno not found")
+    
+    terreno.name = name
+    terreno.tags = tags
+    terreno.center_lat = center_lat
+    terreno.center_lon = center_lon
+    terreno.polygon = polygon
+    
+    db.commit()
+    return RedirectResponse(url=f"/admin/terreni/{terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.post("/terreni/{terreno_id}/delete")
+async def delete_terreno(request: Request, terreno_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    if terreno:
+        db.delete(terreno)
+        db.commit()
+    return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 # --- General Actions ---
 @router.post("/rollback/{completion_id}")
