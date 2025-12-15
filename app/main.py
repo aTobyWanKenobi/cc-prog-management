@@ -16,6 +16,11 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+import os
+
+if not os.path.exists("app/static"):
+    os.makedirs("app/static")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
