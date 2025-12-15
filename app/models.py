@@ -63,7 +63,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True, index=True)
     password_hash: Mapped[str] = mapped_column()
     role: Mapped[str] = mapped_column()  # 'unit', 'tech', 'admin'
-    unita_id: Mapped[Optional[int]] = mapped_column(ForeignKey("unita.id"), nullable=True)
+    unita_id: Mapped[int | None] = mapped_column(ForeignKey("unita.id"), nullable=True)
 
     unita: Mapped[Optional["Unita"]] = relationship()
 
@@ -94,4 +94,3 @@ class Prenotazione(Base):
 
     terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
     unita: Mapped["Unita"] = relationship()
-

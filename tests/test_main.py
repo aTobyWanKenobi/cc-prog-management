@@ -82,9 +82,7 @@ def test_create_and_complete_flow():
     assert "0" in response.text  # Score
 
     # 5. Register Completion (Public)
-    client.post(
-        "/complete", data={"pattuglia_id": "1", "challenge_id": "1"}, auth=("progesplo", "punteggiometro")
-    )
+    client.post("/complete", data={"pattuglia_id": "1", "challenge_id": "1"}, auth=("progesplo", "punteggiometro"))
 
     # 6. Check Ranking (Public) - Score 10
     response = client.get("/", auth=("progesplo", "punteggiometro"))
@@ -114,9 +112,7 @@ def test_rollback():
         data={"name": "Nodi", "description": "Fai un nodo", "points": "10"},
         auth=("admin", "admin"),
     )
-    client.post(
-        "/complete", data={"pattuglia_id": "1", "challenge_id": "1"}, auth=("progesplo", "punteggiometro")
-    )
+    client.post("/complete", data={"pattuglia_id": "1", "challenge_id": "1"}, auth=("progesplo", "punteggiometro"))
 
     # Verify score 10
     response = client.get("/", auth=("progesplo", "punteggiometro"))
