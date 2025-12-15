@@ -1,90 +1,96 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
 from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .database import Base
+
 
 class Unita(Base):
     __tablename__ = "unita"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    sottocampo = Column(String)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    sottocampo: Mapped[str] = mapped_column()
 
-    pattuglie = relationship("Pattuglia", back_populates="unita")
+    pattuglie: Mapped[list["Pattuglia"]] = relationship(back_populates="unita")
+
 
 class Pattuglia(Base):
     __tablename__ = "pattuglie"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    capo_pattuglia = Column(String)
-    unita_id = Column(Integer, ForeignKey("unita.id"))
-    
-    # Denormalized score for easier sorting, or computed? 
-    # Let's compute it or update it on completion to keep reads fast.
-    # For simplicity in this stack, we can compute on the fly or update a field.
-    # Let's keep a field for easy sorting in the DB.
-    current_score = Column(Integer, default=0)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    capo_pattuglia: Mapped[str] = mapped_column()
+    unita_id: Mapped[int] = mapped_column(ForeignKey("unita.id"))
 
-    unita = relationship("Unita", back_populates="pattuglie")
-    completions = relationship("Completion", back_populates="pattuglia")
+    current_score: Mapped[int] = mapped_column(default=0)
+
+    unita: Mapped["Unita"] = relationship(back_populates="pattuglie")
+    completions: Mapped[list["Completion"]] = relationship(back_populates="pattuglia")
+
 
 class Challenge(Base):
     __tablename__ = "challenges"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    description = Column(String)
-    points = Column(Integer)
-    is_fungo = Column(Boolean, default=False)
-    reward_tokens = Column(Integer, default=0)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    description: Mapped[str] = mapped_column()
+    points: Mapped[int] = mapped_column()
+    is_fungo: Mapped[bool] = mapped_column(default=False)
+    reward_tokens: Mapped[int] = mapped_column(default=0)
 
-    completions = relationship("Completion", back_populates="challenge")
+    completions: Mapped[list["Completion"]] = relationship(back_populates="challenge")
+
 
 class Completion(Base):
     __tablename__ = "completions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    pattuglia_id = Column(Integer, ForeignKey("pattuglie.id"))
-    challenge_id = Column(Integer, ForeignKey("challenges.id"))
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    pattuglia_id: Mapped[int] = mapped_column(ForeignKey("pattuglie.id"))
+    challenge_id: Mapped[int] = mapped_column(ForeignKey("challenges.id"))
+    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    pattuglia = relationship("Pattuglia", back_populates="completions")
-    challenge = relationship("Challenge", back_populates="completions")
+    pattuglia: Mapped["Pattuglia"] = relationship(back_populates="completions")
+    challenge: Mapped["Challenge"] = relationship(back_populates="completions")
+
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password_hash = Column(String)
-    role = Column(String) # 'unit', 'tech', 'admin'
-    unita_id = Column(Integer, ForeignKey("unita.id"), nullable=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column()
+    role: Mapped[str] = mapped_column()  # 'unit', 'tech', 'admin'
+    unita_id: Mapped[int | None] = mapped_column(ForeignKey("unita.id"), nullable=True)
 
-    unita = relationship("Unita")
+    unita: Mapped[Optional["Unita"]] = relationship()
+
 
 class Terreno(Base):
     __tablename__ = "terreni"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    tags = Column(String) # Comma-separated tags: SPORT, CERIMONIA, BOSCO, AC, NOTTURNO
-    center_lat = Column(String) # Storing as string to avoid float precision issues if needed, or Float
-    center_lon = Column(String)
-    polygon = Column(String) # JSON string of coordinates
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    tags: Mapped[str] = mapped_column()  # Comma-separated tags
+    center_lat: Mapped[str] = mapped_column()
+    center_lon: Mapped[str] = mapped_column()
+    polygon: Mapped[str] = mapped_column()  # JSON string of coordinates
 
-    prenotazioni = relationship("Prenotazione", back_populates="terreno")
+    prenotazioni: Mapped[list["Prenotazione"]] = relationship(back_populates="terreno")
+
 
 class Prenotazione(Base):
     __tablename__ = "prenotazioni"
 
-    id = Column(Integer, primary_key=True, index=True)
-    terreno_id = Column(Integer, ForeignKey("terreni.id"))
-    unita_id = Column(Integer, ForeignKey("unita.id"))
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
-    duration = Column(Integer) # Hours (1-4)
-    status = Column(String, default="PENDING") # PENDING, APPROVED
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    terreno_id: Mapped[int] = mapped_column(ForeignKey("terreni.id"))
+    unita_id: Mapped[int] = mapped_column(ForeignKey("unita.id"))
+    start_time: Mapped[datetime] = mapped_column()
+    end_time: Mapped[datetime] = mapped_column()
+    duration: Mapped[int] = mapped_column()  # Hours (1-4)
+    status: Mapped[str] = mapped_column(default="PENDING")  # PENDING, APPROVED
 
-    terreno = relationship("Terreno", back_populates="prenotazioni")
-    unita = relationship("Unita")
+    terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
+    unita: Mapped["Unita"] = relationship()
