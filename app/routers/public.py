@@ -1,5 +1,6 @@
 import csv
 import io
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth import get_authenticated_user, get_tech_user
 from app.database import get_db
-from app.models import Challenge, Completion, Pattuglia, Unita, User
+from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
 router = APIRouter(
     dependencies=[Depends(get_authenticated_user)]  # All public routes require at least being logged in
@@ -58,8 +59,22 @@ async def ranking_page(
 
 
 @router.get("/prenotazioni", response_class=HTMLResponse)
-async def prenotazioni_page(request: Request, user: User = Depends(get_authenticated_user)):
-    return templates.TemplateResponse("prenotazioni.html", {"request": request, "user": user})
+async def prenotazioni_page(
+    request: Request, db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)
+):
+    user_reservations = []
+    if user.role == "unit" and user.unita_id:
+        user_reservations = (
+            db.query(Prenotazione)
+            .options(joinedload(Prenotazione.terreno))
+            .filter(Prenotazione.unita_id == user.unita_id)
+            .order_by(Prenotazione.start_time)
+            .all()
+        )
+
+    return templates.TemplateResponse(
+        "prenotazioni.html", {"request": request, "user": user, "user_reservations": user_reservations}
+    )
 
 
 @router.get("/input", response_class=HTMLResponse)
@@ -143,7 +158,88 @@ async def timeline_page(request: Request, db: Session = Depends(get_db), user: U
     )
 
 
-# --- Export ---
+# --- API ---
+@router.get("/api/terreni/availability")
+async def get_terreni_availability(start_date: datetime, end_date: datetime, db: Session = Depends(get_db)):
+    """
+    Returns list of terrains with their availability status for the given range.
+    Status: FREE, PARTIAL, BOOKED
+    """
+    # Ensure naive datetimes for comparison with SQLite naive storage
+    if start_date.tzinfo is not None:
+        start_date = start_date.replace(tzinfo=None)
+    if end_date.tzinfo is not None:
+        end_date = end_date.replace(tzinfo=None)
+
+    terreni = db.query(Terreno).all()
+    results = []
+
+    for t in terreni:
+        # Find reservations overlapping with the requested range for this terrain
+        # Overlap logic: (StartA <= EndB) and (EndA >= StartB)
+        reservations = (
+            db.query(Prenotazione)
+            .filter(
+                Prenotazione.terreno_id == t.id,
+                Prenotazione.start_time < end_date,
+                Prenotazione.end_time > start_date,
+            )
+            .all()
+        )
+
+        status = "FREE"
+        if reservations:
+            # Check if fully booked or partially
+            # Simplification: If any reservation covers the entire requested range (unlikely for broad range)
+            # or if reservations cover the *entirety* of the range?
+            # User requirement:
+            # "free terrain polygons in that slot should appear as green"
+            # "partially available ones should appear in yellow"
+            # "completely booked one should appear gray"
+
+            # Use total seconds logic or simple overlap check?
+            # If the requested range is small (e.g. 1 hour slot), it's binary (Free or Booked).
+            # If the requested range is large (e.g. a day), it could be Partial.
+
+            # Let's calculate covered duration
+            total_duration = (end_date - start_date).total_seconds()
+            covered_duration = 0
+
+            # This is complex because reservations might overlap each other
+            # (though DB shouldn't allow it for same terrain)
+            # Assuming non-overlapping reservations for same terrain:
+            for r in reservations:
+                # Intersect reservation [r.start, r.end] with window [start, end]
+                overlap_start = max(r.start_time, start_date)
+                overlap_end = min(r.end_time, end_date)
+                covered_duration += max(0, (overlap_end - overlap_start).total_seconds())
+
+            if covered_duration >= total_duration:
+                status = "BOOKED"
+            elif covered_duration > 0:
+                status = "PARTIAL"
+
+        results.append(
+            {
+                "id": t.id,
+                "name": t.name,
+                "tags": t.tags,
+                "polygon": t.polygon,
+                "center_lat": t.center_lat,
+                "center_lon": t.center_lon,
+                "description": t.description,
+                "image_urls": t.image_urls,
+                "status": status,
+                "reservations": [
+                    {"start": r.start_time.isoformat(), "end": r.end_time.isoformat(), "unit_name": r.unita.name}
+                    for r in reservations
+                ],
+            }
+        )
+
+    return results
+
+
 @router.get("/export/ranking")
 async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)):
     # Technically only tech/admin should export? Or maybe units too?

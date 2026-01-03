@@ -123,27 +123,152 @@ def init_db():
         print("completions.csv not found, skipping completions population.")
 
     # --- Terreni Population from CSV ---
-    if os.path.exists("terreni.csv"):
-        print("Reading terrains from terreni.csv...")
-        with open("terreni.csv", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                name = row["Name"]
-                tags = row["Tags"]
-                lat = row["CenterLat"]
-                lon = row["CenterLon"]
-                poly = row["Polygon"]
+    # --- Terreni Population (Mock for Visualization) ---
+    # User requested 5 specific convex non-overlapping terrains in bounds:
+    # [46.570666, 8.934910; 46.569872, 8.943958; 46.561192, 8.946918; 46.562750, 8.937576]
+    print("Populating specific mock terrains...")
 
-                exists = db.query(Terreno).filter(Terreno.name == name).first()
-                if not exists:
-                    new_terreno = Terreno(name=name, tags=tags, center_lat=lat, center_lon=lon, polygon=poly)
-                    db.add(new_terreno)
-        db.commit()
-        print("Terrains populated from CSV.")
-    else:
-        print("terreni.csv not found, skipping terrain population.")
+    # Define 5 distinct polygons within the bounds
+    # We'll arrange them roughly in a grid or cluster
 
-    # --- Prenotazioni Population from CSV ---
+    mock_terrains = [
+        {
+            "name": "Campo Base Alpha",
+            "tags": "PRATO,AMPIO",
+            "center_lat": "46.568",
+            "center_lon": "8.936",
+            "polygon": "[[46.569, 8.935], [46.569, 8.937], [46.567, 8.937], [46.567, 8.935]]",
+            "description": "Ampio prato pianeggiante ideale per strutture. Esposizione solare ottima.",
+            "image_urls": (
+                '["https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500",'
+                ' "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=500"]'
+            ),
+        },
+        {
+            "name": "Radura del Bosco",
+            "tags": "BOSCO,OMBRA",
+            "center_lat": "46.568",
+            "center_lon": "8.942",
+            "polygon": "[[46.569, 8.941], [46.569, 8.943], [46.567, 8.943], [46.567, 8.941]]",
+            "description": "Zona ombreggiata nel bosco. Perfetta per attività che richiedono frescura.",
+            "image_urls": (
+                '["https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=500",'
+                ' "https://images.unsplash.com/photo-1511497584788-876760111969?w=500"]'
+            ),
+        },
+        {
+            "name": "Terrazza Panoramica",
+            "tags": "VISTA,PENDIO",
+            "center_lat": "46.564",
+            "center_lon": "8.938",
+            "polygon": "[[46.565, 8.937], [46.565, 8.939], [46.563, 8.939], [46.563, 8.937]]",
+            "description": "Area sopraelevata con vista sulla vallata. Leggera pendenza.",
+            "image_urls": (
+                '["https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=500",'
+                ' "https://images.unsplash.com/photo-1494548162494-384bba4ab999?w=500"]'
+            ),
+        },
+        {
+            "name": "Lungo Fiume",
+            "tags": "ACQUA,SABBIA",
+            "center_lat": "46.564",
+            "center_lon": "8.945",
+            "polygon": "[[46.565, 8.944], [46.565, 8.946], [46.563, 8.946], [46.563, 8.944]]",
+            "description": "Terreno adiacente al corso d'acqua. Accesso diretto all'acqua.",
+            "image_urls": (
+                '["https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500",'
+                ' "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=500"]'
+            ),
+        },
+        {
+            "name": "Arena Centrale",
+            "tags": "GIOCHI,CERCHIO",
+            "center_lat": "46.566",
+            "center_lon": "8.940",
+            "polygon": "[[46.5665, 8.9395], [46.5665, 8.9405], [46.5655, 8.9405], [46.5655, 8.9395]]",
+            "description": "Il cuore del campo. Spazio per giochi notturni e grandi adunate.",
+            "image_urls": (
+                '["https://images.unsplash.com/photo-1533514114760-43846ba54bb4?w=500",'
+                ' "https://images.unsplash.com/photo-1526772662000-3f88f107f698?w=500"]'
+            ),
+        },
+    ]
+
+    for t_data in mock_terrains:
+        exists = db.query(Terreno).filter(Terreno.name == t_data["name"]).first()
+        if not exists:
+            new_terreno = Terreno(
+                name=t_data["name"],
+                tags=t_data["tags"],
+                center_lat=t_data["center_lat"],
+                center_lon=t_data["center_lon"],
+                polygon=t_data["polygon"],
+                description=t_data["description"],
+                image_urls=t_data["image_urls"],
+            )
+            db.add(new_terreno)
+
+    db.commit()
+    print("Mock Terrains populated.")
+
+    # --- Prenotazioni Population (Mock for Visualization) ---
+    # Create some reservations for the summer 2026 window (July 25 - Aug 8)
+    print("Populating mock reservations...")
+
+    camp_start = datetime(2026, 7, 25)
+
+    mock_reservations = [
+        # Campo Base Alpha booked first Saturday afternoon
+        {"terreno": "Campo Base Alpha", "unit": "Breganzona", "start": camp_start + timedelta(hours=14), "duration": 4},
+        # Radura del Bosco booked first Sunday morning
+        {
+            "terreno": "Radura del Bosco",
+            "unit": "Lugano 1915",
+            "start": camp_start + timedelta(days=1, hours=9),
+            "duration": 3,
+        },
+        # Arena Centrale booked for opening files
+        {"terreno": "Arena Centrale", "unit": "Massagno", "start": camp_start + timedelta(hours=20), "duration": 2},
+        # Terrazza Panoramica partial overlaps
+        {
+            "terreno": "Terrazza Panoramica",
+            "unit": "Faido",
+            "start": camp_start + timedelta(days=2, hours=10),
+            "duration": 4,
+        },
+    ]
+
+    for mr in mock_reservations:
+        t = db.query(Terreno).filter(Terreno.name == mr["terreno"]).first()
+        # Find a unit (fuzzy match or first one if not precise, but we have unit list)
+        u = db.query(Unita).filter(Unita.name == mr["unit"]).first()  # Hopefully match csv names
+        # If specific unit not found, define a fallback or skip
+        if not u:
+            u = db.query(Unita).first()
+
+        if t and u:
+            # Check if exists
+            exists = (
+                db.query(Prenotazione)
+                .filter(Prenotazione.terreno_id == t.id, Prenotazione.start_time == mr["start"])
+                .first()
+            )
+
+            if not exists:
+                new_pren = Prenotazione(
+                    terreno_id=t.id,
+                    unita_id=u.id,
+                    start_time=mr["start"],
+                    end_time=mr["start"] + timedelta(hours=mr["duration"]),
+                    duration=mr["duration"],
+                    status="APPROVED",
+                )
+                db.add(new_pren)
+
+    db.commit()
+    print("Mock Reservations populated.")
+
+    # --- Prenotazioni Population from CSV (Legacy/Supplemental) ---
     if os.path.exists("prenotazioni.csv"):
         print("Reading reservations from prenotazioni.csv...")
         with open("prenotazioni.csv", encoding="utf-8") as f:
