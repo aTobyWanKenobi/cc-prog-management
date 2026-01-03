@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punteggiometro - Scout Camp</title>
+    <title>BeSTiale Esplo</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -50,72 +52,109 @@
     <nav class="glass sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <span class="font-bold text-2xl text-scout-700 tracking-tight">Punteggiometro</span>
-                    </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="/"
-                            class="border-transparent text-gray-500 hover:border-scout-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Classifica
-                        </a>
-                        <a href="/timeline"
-                            class="border-transparent text-gray-500 hover:border-scout-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Timeline
-                        </a>
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <span class="font-black text-2xl tracking-tighter text-scout-800">
+                        BeSTiale <span class="text-scout-600">Esplo</span>
+                    </span>
 
-                        <!-- Unit Links -->
-                        <a href="/prenotazioni"
-                            class="border-transparent text-gray-500 hover:border-scout-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Prenotazioni
-                        </a>
+                    <!-- Desktop Navigation Groups -->
+                    <div class="hidden sm:flex sm:items-center sm:space-x-6 ml-10">
+                        <!-- Public Area -->
+                        <div class="flex space-x-1 bg-scout-50/80 rounded-lg p-1 border border-scout-200 items-center">
+                            <a href="/"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
+                                Classifica
+                            </a>
+                            <a href="/timeline"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
+                                Timeline
+                            </a>
+                            <a href="/prenotazioni"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
+                                Calendario Terreni
+                            </a>
+                        </div>
 
-                        <!-- Tech/Admin Links -->
+                        <!-- Management Area (Tech/Admin) -->
                         {% if user and user.role in ['tech', 'admin'] %}
-                        <a href="/input"
-                            class="border-transparent text-gray-500 hover:border-scout-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Inserisci Punti
-                        </a>
-                        <a href="/gestione-terreni"
-                            class="border-transparent text-gray-500 hover:border-scout-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Gestione Terreni
-                        </a>
+                        <div class="flex space-x-1 bg-blue-50/50 rounded-lg p-1 border border-blue-200 items-center">
+                            <span
+                                class="px-2 text-[10px] font-bold text-blue-400 uppercase tracking-wider hidden lg:block">Gestione</span>
+                            <a href="/input"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-white/60 transition-colors">
+                                Completamento Sfide
+                            </a>
+                            <a href="/gestione-terreni"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-white/60 transition-colors">
+                                Prenotazioni terreni
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Right Side: Admin Link & User Profile -->
+                    <div class="flex items-center space-x-4 ml-6">
+                        {% if user and user.role == 'admin' %}
+                        <div class="flex space-x-1 bg-red-50/50 rounded-lg p-1 border border-red-200">
+                            <a href="/admin"
+                                class="flex items-center px-3 py-2 rounded-md text-sm font-bold text-red-600 hover:text-red-800 hover:bg-white/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Admin
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if user %}
+                        <div class="flex items-center space-x-3 pl-4 border-l border-gray-200">
+                            <div class="flex flex-col text-right hidden md:flex">
+                                <span class="text-sm font-bold text-gray-700 leading-none">{{ user.username }}</span>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider">{{ user.role }}</span>
+                            </div>
+                            <a href="/logout"
+                                class="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors"
+                                title="Esci">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </a>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    {% if user and user.role == 'admin' %}
-                    <a href="/admin"
-                        class="text-gray-500 hover:text-scout-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                        Admin
-                    </a>
-                    {% endif %}
+            </div>
 
-                    {% if user %}
-                    <div class="flex items-center space-x-2">
-                        <span class="text-xs text-gray-400 font-bold uppercase">{{ user.username }}</span>
-                        <a href="/logout" class="text-red-500 hover:text-red-700 text-sm font-medium">
-                            Esci
-                        </a>
-                    </div>
-                    {% endif %}
+            <!-- Mobile menu -->
+            <div class="sm:hidden flex flex-col pb-2 border-t border-gray-200 pt-2 bg-white/50">
+                <div class="flex justify-around px-2">
+                    <a href="/" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Classifica</a>
+                    <a href="/timeline" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Timeline</a>
+                    <a href="/prenotazioni"
+                        class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Calendario</a>
                 </div>
+                {% if user and user.role in ['tech', 'admin'] %}
+                <div class="flex justify-around mt-2 border-t border-gray-100 pt-2 px-2 bg-blue-50/30">
+                    <a href="/input" class="text-blue-600 hover:text-blue-800 text-sm font-medium py-2">Inserisci
+                        Punti</a>
+                    <a href="/gestione-terreni"
+                        class="text-blue-600 hover:text-blue-800 text-sm font-medium py-2">Gestione
+                        Terreni</a>
+                </div>
+                {% endif %}
+                {% if user and user.role == 'admin' %}
+                <div class="flex justify-center mt-2 border-t border-gray-100 pt-2 px-2 bg-red-50/30">
+                    <a href="/admin" class="text-red-600 hover:text-red-800 text-sm font-bold py-2">Admin Dashboard</a>
+                </div>
+                {% endif %}
             </div>
-        </div>
-        <!-- Mobile menu -->
-        <div class="sm:hidden flex flex-col pb-2 border-t border-gray-200 pt-2 bg-white/50">
-            <div class="flex justify-around">
-                <a href="/" class="text-gray-600 hover:text-scout-700 text-sm font-medium">Classifica</a>
-                <a href="/timeline" class="text-gray-600 hover:text-scout-700 text-sm font-medium">Timeline</a>
-                <a href="/prenotazioni" class="text-gray-600 hover:text-scout-700 text-sm font-medium">Prenotazioni</a>
-            </div>
-            {% if user and user.role in ['tech', 'admin'] %}
-            <div class="flex justify-around mt-2">
-                <a href="/input" class="text-gray-600 hover:text-scout-700 text-sm font-medium">Inserisci</a>
-                <a href="/gestione-terreni" class="text-gray-600 hover:text-scout-700 text-sm font-medium">Terreni</a>
-            </div>
-            {% endif %}
-        </div>
     </nav>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">

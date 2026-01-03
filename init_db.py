@@ -238,6 +238,19 @@ def init_db():
     db.commit()
     db.close()
 
+    db.close()
+
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Initialize the database.")
+    parser.add_argument("--reset", action="store_true", help="Drop all tables before initializing.")
+    args = parser.parse_args()
+
+    if args.reset:
+        print("Dropping all tables...")
+        Base.metadata.drop_all(bind=engine)
+        print("Tables dropped.")
+
     init_db()

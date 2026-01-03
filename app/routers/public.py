@@ -118,7 +118,29 @@ async def timeline_page(request: Request, db: Session = Depends(get_db), user: U
         .all()
     )
 
-    return templates.TemplateResponse("timeline.html", {"request": request, "completions": completions, "user": user})
+    # Deduplicate in case of race conditions or join artifacts
+    # We use a set of IDs to ensure we only show unique completion IDs
+    # If the user meant "same semantic completion", we might need more,
+    # but let's start by ensuring unique IDs.
+    # Actually, SQLAlchemy `.all()` on this query usually returns unique objects.
+    # Let's filter by (pattuglia, challenge) if they appear consecutively?
+    # No, let's just use `unique_completions` based on ID.
+    unique_completions = []
+    seen_ids = set()
+    for c in completions:
+        if c.id not in seen_ids:
+            unique_completions.append(c)
+            seen_ids.add(c.id)
+
+    # Also, lets explicitly handle the case where "double clicks" might have created 2 entries
+    # with diff IDs but same content
+    # by checking if (pattuglia_id, challenge_id) was just seen?
+    # No, that might hide legitimate re-completions if allowed (though /complete blocks it).
+    # Let's trust unique IDs for now unless the user confirms double database entries.
+
+    return templates.TemplateResponse(
+        "timeline.html", {"request": request, "completions": unique_completions, "user": user}
+    )
 
 
 # --- Export ---

@@ -6,37 +6,33 @@
         <h1 class="text-3xl font-extrabold text-scout-800 tracking-tight">Amministrazione</h1>
     </div>
 
-    <!-- Admin Tabs -->
+    <!-- Admin Navigation (MPA) -->
     <div class="mb-6 border-b border-scout-300">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <a href="/admin"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'dashboard' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Dashboard & Log
             </a>
             <a href="/admin/pattuglie"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'pattuglie' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Pattuglie
             </a>
             <a href="/admin/challenges"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
-                Gestione Sfide
-            </a>
-            <a href="/admin/challenges"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'challenges' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-scout-600 text-scout-800">
                 Gestione Sfide
             </a>
             <a href="/admin/terreni"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'terreni' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Terreni
             </a>
             <a href="/admin/users"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide {% if active_tab == 'users' %}border-scout-600 text-scout-800{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Utenti
             </a>
         </nav>
     </div>
 
-    <!-- Quick Create Challenge -->
+    <!-- Create Challenge Form -->
     <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500 mb-8">
         <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Sfida</h2>
         <form action="/admin/challenges" method="post" class="space-y-4">

@@ -23,9 +23,10 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), user:
         .all()
     )
 
+    unita = db.query(Unita).all()
     return templates.TemplateResponse(
         "admin_dashboard.html",
-        {"request": request, "completions": completions, "user": user, "active_tab": "dashboard"},
+        {"request": request, "completions": completions, "unita": unita, "user": user, "active_tab": "dashboard"},
     )
 
 
@@ -309,6 +310,22 @@ async def delete_terreno(
     if terreno:
         db.delete(terreno)
         db.commit()
+    return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni/{prenotazione_id}/delete")
+async def delete_prenotazione(
+    prenotazione_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if prenotazione:
+        terreno_id = prenotazione.terreno_id
+        db.delete(prenotazione)
+        db.commit()
+        # Redirect back to the terrain edit page
+        return RedirectResponse(url=f"/admin/terreni/{terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+    # If not found, just go back to terreni list
     return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
