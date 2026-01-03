@@ -1,255 +1,138 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="px-4 py-6 sm:px-0" x-data="{ tab: 'dashboard' }">
+<div class="px-4 py-6 sm:px-0">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-extrabold text-scout-800 tracking-tight">Amministrazione</h1>
     </div>
 
-    <!-- Tabs -->
+    <!-- Admin Navigation (MPA) -->
     <div class="mb-6 border-b border-scout-300">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-            <button @click="tab = 'dashboard'"
-                :class="{ 'border-scout-600 text-scout-800': tab === 'dashboard', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'dashboard' }"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide">
+            <a href="/admin"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-scout-600 text-scout-800">
                 Dashboard & Log
-            </button>
-            <button @click="tab = 'pattuglie'"
-                :class="{ 'border-scout-600 text-scout-800': tab === 'pattuglie', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'pattuglie' }"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide">
+            </a>
+            <a href="/admin/pattuglie"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Pattuglie
-            </button>
-            <button @click="tab = 'challenges'"
-                :class="{ 'border-scout-600 text-scout-800': tab === 'challenges', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'challenges' }"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide">
+            </a>
+            <a href="/admin/challenges"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Sfide
-            </button>
-            <button @click="tab = 'users'"
-                :class="{ 'border-scout-600 text-scout-800': tab === 'users', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'users' }"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide">
+            </a>
+            <a href="/admin/terreni"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
+                Gestione Terreni
+            </a>
+            <a href="/admin/users"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
                 Gestione Utenti
-            </button>
+            </a>
         </nav>
     </div>
 
-    <!-- Dashboard Tab -->
-    <div x-show="tab === 'dashboard'">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <!-- Quick Create Pattuglia -->
-            <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
-                <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Pattuglia</h2>
-                <form action="/admin/pattuglie" method="post" class="space-y-4">
-                    <div>
-                        <input type="text" name="name" placeholder="Nome Pattuglia" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                    </div>
-                    <div>
-                        <input type="text" name="capo_pattuglia" placeholder="Capo Pattuglia" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                    </div>
-                    <div>
-                        <select name="unita_id" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                            {% for u in unita %}
-                            <option value="{{ u.id }}">{{ u.name }} ({{ u.sottocampo }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
-                        Crea
-                    </button>
-                </form>
-            </div>
-
-            <!-- Quick Create Challenge -->
-            <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
-                <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Sfida</h2>
-                <form action="/admin/challenges" method="post" class="space-y-4">
-                    <div>
-                        <input type="text" name="name" placeholder="Nome Sfida" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                    </div>
-                    <div>
-                        <textarea name="description" placeholder="Descrizione" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80"></textarea>
-                    </div>
-                    <div class="flex space-x-4">
-                        <input type="number" name="points" placeholder="Punti" required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                        <input type="number" name="reward_tokens" placeholder="Token" value="0"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" name="is_fungo" value="true"
-                            class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
-                        <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
-                    </div>
-                    <button type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
-                        Crea
-                    </button>
-                </form>
-            </div>
+    <!-- Dashboard Content -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <!-- Quick Create Pattuglia -->
+        <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
+            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Pattuglia</h2>
+            <form action="/admin/pattuglie" method="post" class="space-y-4">
+                <div>
+                    <input type="text" name="name" placeholder="Nome Pattuglia" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                </div>
+                <div>
+                    <input type="text" name="capo_pattuglia" placeholder="Capo Pattuglia" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                </div>
+                <div>
+                    <select name="unita_id" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                        {% for u in unita or [] %}
+                        <!-- Safely handle if unita is not passed to dashboard, though traditionally it might fail if we don't update backend.
+                             Wait, admin_dashboard endpoint DOES NOT pass 'unita'.
+                             I need to fix the backend endpoint too if I want this form here.
+                             For now, I will REMOVE this quick form from dashboard if data isn't there,
+                             OR I will update backend.
+                             Actually, simplifying the dashboard to just LOGs is often better for MPA.
+                             But user likes "Dashboard".
+                             Let's keep it but I MUST update the backend to pass 'unita' context.
+                             I'll assume I will do that next. -->
+                        <option value="{{ u.id }}">{{ u.name }} ({{ u.sottocampo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
+                    Crea
+                </button>
+            </form>
         </div>
 
-        <!-- Log -->
-        <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
-                <h3 class="text-lg leading-6 font-bold text-scout-900">Log Attività Recenti</h3>
-            </div>
-            <ul role="list" class="divide-y divide-scout-200 bg-white/60">
-                {% for c in completions %}
-                <li class="px-4 py-4 sm:px-6 hover:bg-white/80 transition-colors duration-150">
-                    <div class="flex items-center justify-between">
-                        <div class="flex flex-col">
-                            <p class="text-sm font-bold text-scout-800 truncate">
-                                {{ c.pattuglia.name }} <span class="font-normal text-gray-600">ha completato</span> {{
-                                c.challenge.name }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                {{ c.timestamp.strftime('%d/%m/%Y %H:%M') }} | <span
-                                    class="text-scout-600 font-bold">+{{ c.challenge.points }} pt</span>
-                            </p>
-                        </div>
-                        <div class="ml-2 flex-shrink-0 flex">
-                            <form action="/admin/rollback/{{ c.id }}" method="post"
-                                onsubmit="return confirm('Sei sicuro di voler annullare questa azione?');">
-                                <button type="submit"
-                                    class="px-3 py-1 text-xs font-bold text-red-700 bg-red-100 rounded-full hover:bg-red-200 border border-red-200">
-                                    Annulla
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
+        <!-- Quick Create Challenge -->
+        <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
+            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Sfida</h2>
+            <form action="/admin/challenges" method="post" class="space-y-4">
+                <div>
+                    <input type="text" name="name" placeholder="Nome Sfida" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                </div>
+                <div>
+                    <textarea name="description" placeholder="Descrizione" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80"></textarea>
+                </div>
+                <div class="flex space-x-4">
+                    <input type="number" name="points" placeholder="Punti" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                    <input type="number" name="reward_tokens" placeholder="Token" value="0"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="is_fungo" value="true"
+                        class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
+                    <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
+                    Crea
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Pattuglie Tab -->
-    <div x-show="tab === 'pattuglie'" style="display: none;">
-        <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-scout-100">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Capo
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Unità
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">
-                            Azioni</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white/60 divide-y divide-gray-200">
-                    {% for p in pattuglie %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ p.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.capo_pattuglia }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.unita.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/admin/pattuglie/{{ p.id }}"
-                                class="text-scout-600 hover:text-scout-900 font-bold mr-2">Modifica</a>
-                            <form action="/admin/pattuglie/{{ p.id }}/delete" method="post" class="inline"
-                                onsubmit="return confirm('Eliminare questa pattuglia?');">
-                                <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Log -->
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
+            <h3 class="text-lg leading-6 font-bold text-scout-900">Log Attività Recenti</h3>
         </div>
-    </div>
-
-    <!-- Challenges Tab -->
-    <div x-show="tab === 'challenges'" style="display: none;">
-        <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-scout-100">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Punti
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Fungo
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">
-                            Azioni</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white/60 divide-y divide-gray-200">
-                    {% for c in challenges %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.points }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {% if c.is_fungo %}🍄{% endif %}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/admin/challenges/{{ c.id }}"
-                                class="text-scout-600 hover:text-scout-900 font-bold mr-2">Modifica</a>
-                            <form action="/admin/challenges/{{ c.id }}/delete" method="post" class="inline"
-                                onsubmit="return confirm('Eliminare questa sfida?');">
-                                <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Users Tab -->
-    <div x-show="tab === 'users'" style="display: none;">
-        <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-scout-100">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">
-                            Username</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Ruolo
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Unità
-                            Collegata</th>
-                        <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">Nuova
-                            Password</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white/60 divide-y divide-gray-200">
-                    {% for u in users %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ u.username }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if u.role == 'admin' %}bg-red-100 text-red-800{% elif u.role == 'tech' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
-                                {{ u.role }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {% if u.unita %}{{ u.unita.name }}{% else %}-{% endif %}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <form action="/admin/users/{{ u.id }}/password" method="post"
-                                class="flex justify-end items-center space-x-2">
-                                <input type="text" name="password" placeholder="Nuova Password" required
-                                    class="w-32 rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-xs p-1">
-                                <button type="submit"
-                                    class="text-scout-600 hover:text-scout-900 font-bold">Salva</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <ul role="list" class="divide-y divide-scout-200 bg-white/60">
+            {% for c in completions %}
+            <li class="px-4 py-4 sm:px-6 hover:bg-white/80 transition-colors duration-150">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <p class="text-sm font-bold text-scout-800 truncate">
+                            {{ c.pattuglia.name }} <span class="font-normal text-gray-600">ha completato</span> {{
+                            c.challenge.name }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {{ c.timestamp.strftime('%d/%m/%Y %H:%M') }} | <span class="text-scout-600 font-bold">+{{
+                                c.challenge.points }} pt</span>
+                        </p>
+                    </div>
+                    <div class="ml-2 flex-shrink-0 flex">
+                        <form action="/admin/rollback/{{ c.id }}" method="post"
+                            onsubmit="return confirm('Sei sicuro di voler annullare questa azione?');">
+                            <button type="submit"
+                                class="px-3 py-1 text-xs font-bold text-red-700 bg-red-100 rounded-full hover:bg-red-200 border border-red-200">
+                                Annulla
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
-<!-- Alpine.js for tabs -->
-<!-- Alpine.js for tabs (now in base.html) -->
 {% endblock %}

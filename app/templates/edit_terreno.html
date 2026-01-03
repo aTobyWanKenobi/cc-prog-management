@@ -60,6 +60,8 @@
                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Inizio</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durata</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Stato</th>
+                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Azioni
+                    </th>
                 </tr>
             </thead>
             <tbody class="bg-white/60 divide-y divide-gray-200">
@@ -75,6 +77,12 @@
                             {% if p.status == 'APPROVED' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
                             {{ p.status }}
                         </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <form action="/admin/prenotazioni/{{ p.id }}/delete" method="post" class="inline"
+                            onsubmit="return confirm('Eliminare questa prenotazione?');">
+                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
