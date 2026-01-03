@@ -77,6 +77,8 @@ class Terreno(Base):
     center_lat: Mapped[str] = mapped_column()
     center_lon: Mapped[str] = mapped_column()
     polygon: Mapped[str] = mapped_column()  # JSON string of coordinates
+    description: Mapped[str] = mapped_column(default="")
+    image_urls: Mapped[str] = mapped_column(default="[]")  # JSON string of list of URLs
 
     prenotazioni: Mapped[list["Prenotazione"]] = relationship(back_populates="terreno")
 
