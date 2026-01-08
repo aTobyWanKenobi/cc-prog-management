@@ -1,10 +1,40 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+
+class TerrenoCategoria(str, Enum):
+    """Valid categories for terrain tags."""
+
+    SPORT = "SPORT"
+    CERIMONIA = "CERIMONIA"
+    NOTTURNO = "NOTTURNO"
+    BIVACCO = "BIVACCO"
+
+    @classmethod
+    def validate_tags(cls, tags_str: str) -> tuple[bool, list[str]]:
+        """
+        Validate that all tags in a comma-separated string are valid categories.
+        Returns (is_valid, list of invalid tags).
+        """
+        if not tags_str or not tags_str.strip():
+            return False, ["empty"]
+
+        valid_values = {e.value for e in cls}
+        tags = [t.strip().upper() for t in tags_str.split(",") if t.strip()]
+        invalid_tags = [t for t in tags if t not in valid_values]
+
+        return len(invalid_tags) == 0, invalid_tags
+
+    @classmethod
+    def all_values(cls) -> list[str]:
+        """Return all valid category values."""
+        return [e.value for e in cls]
 
 
 class Unita(Base):

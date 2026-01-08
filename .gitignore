@@ -3,6 +3,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# KML/KMZ map files (should not be versioned)
+*.kmz
+*.kml
+
+
 # C extensions
 *.so
 

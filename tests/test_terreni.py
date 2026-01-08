@@ -24,7 +24,7 @@ def test_terreno_crud(client, session):
         "/admin/terreni",
         data={
             "name": "Football Field",
-            "tags": "SPORT,GRASS",
+            "tags": "SPORT,BIVACCO",
             "center_lat": "46.1",
             "center_lon": "9.1",
             "polygon": "[[0,0],[1,1]]",
@@ -35,7 +35,7 @@ def test_terreno_crud(client, session):
 
     t = session.query(Terreno).filter(Terreno.name == "Football Field").first()
     assert t is not None
-    assert t.tags == "SPORT,GRASS"
+    assert t.tags == "SPORT,BIVACCO"
 
     # Edit
     response = client.post(
@@ -64,7 +64,7 @@ def test_reservation_visibility(client, session):
     setup_admin(session)
     client.post("/login", data={"username": "admin", "password": "admin"})
 
-    t = Terreno(name="Forest", tags="BOSCO", center_lat="0", center_lon="0", polygon="[]")
+    t = Terreno(name="Forest", tags="BIVACCO", center_lat="0", center_lon="0", polygon="[]")
     u = Unita(name="Scouts", sottocampo="S")
     session.add(t)
     session.add(u)
