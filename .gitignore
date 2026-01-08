@@ -15,6 +15,15 @@ __pycache__/
 *.csv
 *.txt
 
+# Allow essential config files
+!terreni.csv
+!units.csv
+!pattuglie.csv
+!challenges.csv
+!prenotazioni.csv
+!completions.csv
+!PRESENTATION.md
+
 # Distribution / packaging
 .Python
 build/

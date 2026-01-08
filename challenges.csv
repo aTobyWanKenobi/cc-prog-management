@@ -1,0 +1,8 @@
+Name,Description,Points,RewardTokens,IsFungo
+Caccia all'Orco,Trova e sconfiggi un orco nascosto nel bosco.,50,5,False
+Indovinelli di Gollum,Risolvi tre indovinelli difficili.,30,3,False
+Scalata del Monte Fato,Raggiungi la cima della collina più alta.,100,10,True
+Fuga dai Nazgul,Completa il percorso a ostacoli senza farti vedere.,60,6,False
+Cucina Hobbit,Prepara un pasto con ingredienti di fortuna.,40,4,False
+Forgiatura dell'Anello,Costruisci un anello con materiali naturali.,70,7,False
+Tiro con l'Arco Elfico,Colpisci il bersaglio da 20 metri.,50,5,False
