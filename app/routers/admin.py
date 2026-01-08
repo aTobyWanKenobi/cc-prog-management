@@ -5,7 +5,16 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth import get_admin_user
 from app.database import get_db
-from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
+from app.models import (
+    Challenge,
+    Completion,
+    Pattuglia,
+    Prenotazione,
+    Terreno,
+    TerrenoCategoria,
+    Unita,
+    User,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_admin_user)])
 
@@ -249,7 +258,18 @@ async def create_terreno(
     db: Session = Depends(get_db),
     user: User = Depends(get_admin_user),
 ):
-    new_terreno = Terreno(name=name, tags=tags, center_lat=center_lat, center_lon=center_lon, polygon=polygon)
+    # Validate tags
+    normalized_tags = tags.strip().upper()
+    is_valid, invalid_tags = TerrenoCategoria.validate_tags(normalized_tags)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tag non validi: {invalid_tags}. Tag validi: {TerrenoCategoria.all_values()}",
+        )
+
+    new_terreno = Terreno(
+        name=name, tags=normalized_tags, center_lat=center_lat, center_lon=center_lon, polygon=polygon
+    )
     db.add(new_terreno)
     db.commit()
     return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
@@ -292,8 +312,17 @@ async def update_terreno(
     if not terreno:
         raise HTTPException(status_code=404, detail="Terreno not found")
 
+    # Validate tags
+    normalized_tags = tags.strip().upper()
+    is_valid, invalid_tags = TerrenoCategoria.validate_tags(normalized_tags)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tag non validi: {invalid_tags}. Tag validi: {TerrenoCategoria.all_values()}",
+        )
+
     terreno.name = name
-    terreno.tags = tags
+    terreno.tags = normalized_tags
     terreno.center_lat = center_lat
     terreno.center_lon = center_lon
     terreno.polygon = polygon

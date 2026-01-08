@@ -244,13 +244,31 @@
             },
 
             initMap() {
-                this.map = L.map('map').setView([46.565, 8.940], 14);
+                // Restore map view from localStorage if available
+                const savedCenter = localStorage.getItem('terrainMapCenter');
+                const savedZoom = localStorage.getItem('terrainMapZoom');
+
+                const initialCenter = savedCenter ? JSON.parse(savedCenter) : [46.565, 8.940];
+                const initialZoom = savedZoom ? parseInt(savedZoom) : 14;
+
+                this.map = L.map('map').setView(initialCenter, initialZoom);
+
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(this.map);
+
+                // Save view on interaction to prevent 'random' resets
+                this.map.on('moveend zoomend', () => {
+                    localStorage.setItem('terrainMapCenter', JSON.stringify(this.map.getCenter()));
+                    localStorage.setItem('terrainMapZoom', this.map.getZoom());
+                });
+
+                // Periodic invalidateSize fix
+                setTimeout(() => this.map.invalidateSize(), 500);
             },
 
             generateCalendarDays() {
+                this.calendarDays = [];
                 let start = new Date('2026-07-25');
                 for (let i = 0; i < 15; i++) {
                     let d = new Date(start);
