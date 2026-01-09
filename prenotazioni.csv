@@ -1,17 +1,31 @@
 TerrenoName,UnitName,StartTime,Duration,Status
-Saracino 1,Viganello,2026-08-04T12:00:00,2,APPROVED
-Saracino 1,Balerna,2026-08-07T10:00:00,1,APPROVED
-Saracino 2,Massagno,2026-08-03T12:00:00,3,APPROVED
-Saracino 2,Balerna,2026-07-25T17:00:00,3,APPROVED
-Saracino 3,Medio Vedeggio,2026-07-31T12:00:00,4,APPROVED
-Saracino 4,Canobbio,2026-08-04T18:00:00,4,APPROVED
-Saracino 4,Biasca,2026-08-06T11:00:00,2,APPROVED
-Bosco Pio 1,Bellinzona + Moesano,2026-08-05T09:00:00,4,APPROVED
-Bosco Pio 2,Lugano 1915,2026-07-31T09:00:00,4,APPROVED
-Bosco Pio 2,Faido,2026-08-02T18:00:00,3,APPROVED
-Prato Prusciada,TeGo + Caslano,2026-07-27T13:00:00,1,APPROVED
-Bosco Cugnett,Arogno,2026-07-28T16:00:00,2,APPROVED
-Cerimonia cugnett,Gambarogno,2026-07-30T12:00:00,2,APPROVED
-Cerimonia cugnett,Bellinzona + Moesano,2026-07-31T18:00:00,3,APPROVED
-Bosco Valle,Canobbio,2026-08-03T10:00:00,1,APPROVED
-Bosco Valle,Agno Bioggio,2026-08-06T14:00:00,2,APPROVED
+Spiazzo Cügnett,Faido,2026-07-30T17:00:00,1,APPROVED
+Dietro Pinadaigra - Alto,Canobbio,2026-08-06T20:00:00,3,APPROVED
+Terreno Bestiale - Nord,Balerna,2026-08-03T11:00:00,2,APPROVED
+Terreno bestiale - sud,Bellinzona + Moesano,2026-08-07T20:00:00,3,APPROVED
+Bosco Pio,Breganzona,2026-07-26T18:00:00,3,APPROVED
+Terreno 1,Brigata Locarno,2026-08-04T17:00:00,2,APPROVED
+Terreno Fiume,Mendrisio + Monte San Giorgio,2026-07-25T20:00:00,1,APPROVED
+Prato Via Chiesa,Mendrisio + Monte San Giorgio,2026-07-26T17:00:00,4,APPROVED
+Campo Esplo - Fascia Sud,Mendrisio + Monte San Giorgio,2026-08-03T19:00:00,3,APPROVED
+Tornanti piste,Claro-Daro + Sant'Antonino,2026-07-27T17:00:00,1,APPROVED
+Dietro Pinadaigra - Basso,Vallemaggia,2026-07-25T15:00:00,4,APPROVED
+Prato Saracino,Mendrisio + Monte San Giorgio,2026-07-27T12:00:00,3,APPROVED
+Bosco Cügnett,Medio Vedeggio,2026-07-29T18:00:00,3,APPROVED
+Terreno 1,TeGo + Caslano,2026-08-08T08:00:00,4,APPROVED
+Tornanti piste,Canobbio,2026-07-30T19:00:00,3,APPROVED
+Bosco Valle,Castel S. Pietro,2026-08-03T12:00:00,2,APPROVED
+Radura Campasc,Agno Bioggio,2026-08-01T12:00:00,2,APPROVED
+Prato Via Chiesa,Giubiasco,2026-07-30T15:00:00,1,APPROVED
+Radura sotto Pinadaigra,Giubiasco,2026-07-26T13:00:00,4,APPROVED
+Terreno 1,Mendrisio + Monte San Giorgio,2026-07-30T14:00:00,2,APPROVED
+Prato Prüsciada,Giubiasco,2026-08-01T19:00:00,1,APPROVED
+Campo Esplo - Fascia Ovest,Brigata La Fenice,2026-07-25T18:00:00,1,APPROVED
+Radura sotto Pinadaigra,Lugano 1915,2026-07-27T14:00:00,3,APPROVED
+Tornanti piste,Gambarogno,2026-08-02T11:00:00,1,APPROVED
+Bosco Cügnett,Breganzona,2026-08-01T08:00:00,3,APPROVED
+Terreno 1,Biasca,2026-08-06T19:00:00,2,APPROVED
+Radura Campasc,SOC,2026-08-05T12:00:00,1,APPROVED
+Tornanti piste,Gambarogno,2026-07-26T10:00:00,4,APPROVED
+Sasso Marcio,Agno Bioggio,2026-08-05T09:00:00,4,APPROVED
+Sasso Marcio,Mendrisio + Monte San Giorgio,2026-07-25T12:00:00,3,APPROVED
