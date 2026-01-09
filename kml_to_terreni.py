@@ -18,6 +18,7 @@ import argparse
 import csv
 import json
 import os
+import random
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
@@ -183,6 +184,34 @@ def extract_polygons_from_file(file_path: str) -> list[Polygon]:
         raise ValueError(f"Unsupported file format: {ext}. Use .kml or .kmz files.")
 
 
+# Valid categories for random tag generation
+VALID_TAGS = ["SPORT", "CERIMONIA", "NOTTURNO", "BIVACCO"]
+
+# Mock descriptions
+MOCK_DESCRIPTIONS = [
+    (
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    ),
+    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    ("Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+]
+
+# Stock photo URLs
+STOCK_IMAGES = [
+    "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500",
+    "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=500",
+    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=500",
+    "https://images.unsplash.com/photo-1511497584788-876760111969?w=500",
+    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=500",
+    "https://images.unsplash.com/photo-1494548162494-384bba4ab999?w=500",
+    "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500",
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=500",
+]
+
+
 def write_terreni_csv(polygons: list[Polygon], output_path: str) -> None:
     """Write polygons to terreni.csv format."""
     with open(output_path, "w", newline="", encoding="utf-8") as f:
@@ -190,21 +219,29 @@ def write_terreni_csv(polygons: list[Polygon], output_path: str) -> None:
         writer.writerow(["Name", "Tags", "CenterLat", "CenterLon", "Polygon", "Description", "ImageUrls"])
 
         for poly in polygons:
+            # Generate random tags (1 or 2)
+            num_tags = random.randint(1, 2)
+            tags = ", ".join(random.sample(VALID_TAGS, num_tags))
+
+            # Use description from KML if available, else Lorem Ipsum
+            desc = poly.description if poly.description else random.choice(MOCK_DESCRIPTIONS)
+
+            # Assign 2 random stock images
+            images = random.sample(STOCK_IMAGES, 2)
+
             writer.writerow(
                 [
                     poly.name,
-                    "",  # Tags - to be filled manually (SPORT, CERIMONIA, NOTTURNO, BIVACCO)
+                    tags,
                     f"{poly.center_lat:.6f}",
                     f"{poly.center_lon:.6f}",
                     json.dumps(poly.coordinates),
-                    poly.description,
-                    "[]",  # ImageUrls - empty by default
+                    desc,
+                    json.dumps(images),
                 ]
             )
 
     print(f"\n[OK] Written {len(polygons)} terrains to: {output_path}")
-    print("\n[!] Remember to fill in the 'Tags' column with valid values:")
-    print("   SPORT, CERIMONIA, NOTTURNO, BIVACCO")
 
 
 def main():
