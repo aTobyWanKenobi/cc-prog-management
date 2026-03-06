@@ -126,20 +126,22 @@
         </div>
     </div>
 
-    <!-- Calendar Section (Below Map, Full Width) -->
-    <div x-show="selectedTerrain" class="mt-6 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-        style="display: none;">
-        <div class="bg-scout-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="font-bold text-scout-800">
-                Occupazione: <span x-text="selectedTerrain?.name"></span> (25 Lug - 08 Ago)
-            </h3>
-            <button @click="selectedTerrain = null" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="p-4 overflow-x-auto">
+    <!-- Calendar & Form Section -->
+    <div x-show="selectedTerrain" class="grid grid-cols-1 xl:grid-cols-4 gap-6 mt-6 items-start" style="display: none;">
+
+        <!-- Calendar Section -->
+        <div class="xl:col-span-3 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-scout-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-scout-800">
+                    Occupazione: <span x-text="selectedTerrain?.name"></span> (25 Lug - 08 Ago)
+                </h3>
+                <button @click="selectedTerrain = null" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 overflow-x-auto" @mouseup.window="endDrag()" @mouseleave="endDrag()">
             <div
                 class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px]">
                 <!-- Header Row (Days) -->
@@ -156,8 +158,10 @@
                             x-text="((step + 6) % 24) + ':00'"></div>
 
                         <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
-                            <div class="bg-white h-6 relative group border-white/50 border hover:z-30"
-                                :class="getSlotClass(day, step + 6)">
+                            <div class="bg-white h-6 relative group border-white/50 border select-none transition-colors"
+                                :class="getSlotClass(day, step + 6)"
+                                @mousedown.prevent="startDrag(day, step + 6)"
+                                @mouseenter="onDrag(day, step + 6)">
 
                                 <!-- Tooltip on Hover -->
                                 <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs p-1 rounded whitespace-nowrap z-50 mb-1"
@@ -168,7 +172,57 @@
                     </contents>
                 </template>
             </div>
+            </div>
         </div>
+
+        <!-- Booking Request Form (Units Only) -->
+        {% if user.role == 'unit' %}
+        <div class="xl:col-span-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden sticky top-6">
+            <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
+                <h3 class="font-bold text-blue-800">Richiedi Prenotazione</h3>
+            </div>
+            <div class="px-6 py-3 bg-blue-50/50 text-xs text-blue-800 border-b border-gray-100 flex items-center">
+                <svg class="w-4 h-4 mr-2 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                Trascina sul calendario per selezionare l'orario (max 4h).
+            </div>
+            <form action="/prenotazioni" method="POST" class="p-6">
+                <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Data Selezionata</label>
+                        <input type="date" name="start_date" x-model="selectedStartDate" required readonly
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
+                        <select name="start_hour" x-model="selectedStartHour" required readonly style="pointer-events: none;"
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                            <template x-for="h in 24" :key="h">
+                                <option :value="(h+6)%24 || 24" x-text="(h+6)%24 + ':00'" :selected="selectedStartHour === ((h+6)%24 || 24)"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Durata (ore)</label>
+                        <select name="duration" x-model="selectedDuration" required readonly style="pointer-events: none;"
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                            <option value="1" :selected="selectedDuration == 1">1 ora</option>
+                            <option value="2" :selected="selectedDuration == 2">2 ore</option>
+                            <option value="3" :selected="selectedDuration == 3">3 ore</option>
+                            <option value="4" :selected="selectedDuration == 4">4 ore</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex flex-col space-y-3">
+                    <p class="text-sm text-gray-500 text-center">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
+                    <button type="submit" :disabled="!selectedStartDate || !selectedStartHour"
+                        class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-3 px-6 rounded-lg transition-colors shadow-md w-full">
+                        Invia Richiesta
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Reservations Dashboard -->
@@ -249,66 +303,7 @@
         </div>
     </div>
 
-    <!-- Booking Request Form (Units Only) -->
-    {% if user.role == 'unit' %}
-    <div x-show="selectedTerrain" class="mt-6 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-        style="display: none;">
-        <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
-            <h3 class="font-bold text-blue-800">Richiedi Prenotazione</h3>
-        </div>
-        <form action="/prenotazioni" method="POST" class="p-6">
-            <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Data</label>
-                    <input type="date" name="start_date" value="2026-07-25" required
-                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
-                    <select name="start_hour" required
-                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
-                        <option value="7">07:00</option>
-                        <option value="8">08:00</option>
-                        <option value="9">09:00</option>
-                        <option value="10">10:00</option>
-                        <option value="11">11:00</option>
-                        <option value="12">12:00</option>
-                        <option value="13">13:00</option>
-                        <option value="14" selected>14:00</option>
-                        <option value="15">15:00</option>
-                        <option value="16">16:00</option>
-                        <option value="17">17:00</option>
-                        <option value="18">18:00</option>
-                        <option value="19">19:00</option>
-                        <option value="20">20:00</option>
-                        <option value="21">21:00</option>
-                        <option value="22">22:00</option>
-                        <option value="23">23:00</option>
-                        <option value="24">00:00</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Durata (ore)</label>
-                    <select name="duration" required
-                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
-                        <option value="1">1 ora</option>
-                        <option value="2" selected>2 ore</option>
-                        <option value="3">3 ore</option>
-                        <option value="4">4 ore</option>
-                    </select>
-                </div>
-            </div>
-            <div class="mt-4 flex items-center justify-between">
-                <p class="text-sm text-gray-500">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
-                <button type="submit"
-                    class="bg-scout-600 hover:bg-scout-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
-                    Invia Richiesta
-                </button>
-            </div>
-        </form>
-    </div>
-    {% endif %}
+
 
 </div>
 
@@ -324,6 +319,15 @@
             selectedTerrain: null,
             terrainsData: [],
             calendarDays: [],
+
+            isDragging: false,
+            dragStartDay: null,
+            dragStartHour: null,
+            dragCurrentHour: null,
+
+            selectedStartDate: '2026-07-25',
+            selectedStartHour: 14,
+            selectedDuration: 2,
 
             init() {
                 this.initMap();
@@ -476,16 +480,97 @@
             getSlotClass(day, hour) {
                 if (!this.selectedTerrain) return '';
 
+                let isBooked = this.isSlotBooked(day, hour);
+                if (isBooked) return 'bg-indigo-100 border-indigo-200 cursor-not-allowed';
+
+                let isSelected = this.isSlotSelected(day, hour);
+                if (isSelected) return 'bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+
+                return 'cursor-pointer hover:bg-scout-100';
+            },
+
+            isSlotBooked(day, hour) {
                 let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
                 let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
 
-                let isBooked = this.selectedTerrain.reservations.some(r => {
+                return this.selectedTerrain.reservations.some(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
                     return (rStart < slotEnd && rEnd > slotStart);
                 });
+            },
 
-                return isBooked ? 'bg-indigo-100 border-indigo-200' : '';
+            formatDateForInput(date) {
+                const z = n => ('0' + n).slice(-2);
+                return date.getFullYear() + '-' + z(date.getMonth() + 1) + '-' + z(date.getDate());
+            },
+
+            startDrag(day, hour) {
+                if (this.isSlotBooked(day, hour)) return;
+                this.isDragging = true;
+                this.dragStartDay = new Date(day).getTime();
+                this.dragStartHour = hour;
+                this.dragCurrentHour = hour;
+            },
+
+            onDrag(day, hour) {
+                if (!this.isDragging) return;
+                const dayTime = new Date(day).getTime();
+                if (dayTime !== this.dragStartDay) return;
+
+                this.dragCurrentHour = hour;
+            },
+
+            endDrag() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+
+                let startH = Math.min(this.dragStartHour, this.dragCurrentHour);
+                let endH = Math.max(this.dragStartHour, this.dragCurrentHour);
+                let duration = endH - startH + 1;
+
+                if (duration > 4) {
+                    duration = 4;
+                    endH = startH + 3;
+                }
+
+                let valid = true;
+                for (let h = startH; h <= endH; h++) {
+                    if (this.isSlotBooked(this.dragStartDay, h)) {
+                        valid = false; break;
+                    }
+                }
+
+                if (valid) {
+                    this.selectedStartDate = this.formatDateForInput(new Date(this.dragStartDay));
+                    this.selectedStartHour = startH;
+                    this.selectedDuration = duration;
+                }
+
+                this.dragStartDay = null;
+            },
+
+            isSlotSelected(day, hour) {
+                const dayTime = typeof day === 'number' ? day : new Date(day).getTime();
+
+                if (this.isDragging && dayTime === this.dragStartDay) {
+                    let minH = Math.min(this.dragStartHour, this.dragCurrentHour);
+                    let maxH = Math.max(this.dragStartHour, this.dragCurrentHour);
+                    if (maxH - minH + 1 > 4) maxH = minH + 3;
+                    return hour >= minH && hour <= maxH;
+                }
+
+                if (!this.isDragging && this.selectedStartDate) {
+                    let parts = this.selectedStartDate.split('-');
+                    let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+
+                    if (dayTime === selTime) {
+                         const maxH = this.selectedStartHour + parseInt(this.selectedDuration) - 1;
+                         return hour >= this.selectedStartHour && hour <= maxH;
+                    }
+                }
+
+                return false;
             },
 
             getSlotTooltip(day, hour) {
