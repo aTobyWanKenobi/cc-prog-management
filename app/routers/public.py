@@ -34,7 +34,7 @@ async def ranking_page(
     if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
         return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
 
-    query = db.query(Pattuglia).join(Unita).options(joinedload(Pattuglia.unita))
+    query = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").options(joinedload(Pattuglia.unita))
 
     # Filter logic for Sottocampo
     if sottocampo_filter and sottocampo_filter.strip():
@@ -136,10 +136,21 @@ async def create_prenotazione(
     if user.role != "unit" or not user.unita_id:
         raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
 
+    if start_hour < 7 or start_hour + duration > 25:
+        raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
+
     if duration < 1 or duration > 4:
         raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
 
-    start_time = datetime.strptime(f"{start_date} {start_hour}:00", "%Y-%m-%d %H:00")
+    try:
+        if start_hour == 24:
+            base_date = datetime.strptime(start_date, "%Y-%m-%d")
+            start_time = base_date + timedelta(days=1)
+        else:
+            start_time = datetime.strptime(f"{start_date} {start_hour:02d}:00", "%Y-%m-%d %H:00")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data o ora non valida.") from None
+
     end_time = start_time + timedelta(hours=duration)
 
     # Check for overlapping reservations on the same terrain
@@ -184,7 +195,7 @@ async def create_prenotazione(
 
 @router.get("/input", response_class=HTMLResponse)
 async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
-    pattuglie = db.query(Pattuglia).order_by(Pattuglia.name).all()
+    pattuglie = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").order_by(Pattuglia.name).all()
     challenges = db.query(Challenge).order_by(Challenge.name).all()
     return templates.TemplateResponse(
         request, "input.html", {"pattuglie": pattuglie, "challenges": challenges, "user": user}
@@ -282,17 +293,23 @@ async def register_completion(
     if existing:
         return RedirectResponse(url="/input?error=already_completed", status_code=status.HTTP_303_SEE_OTHER)
 
+    # Validate Posto
+    pattuglia = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).filter(Pattuglia.id == pattuglia_id).first()
+    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+
+    if not pattuglia or not challenge:
+        return RedirectResponse(url="/input?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+
+    if pattuglia.unita.tipo == "Posto":
+        return RedirectResponse(url="/input?error=invalid_unit_type", status_code=status.HTTP_303_SEE_OTHER)
+
     # Register completion
     new_completion = Completion(pattuglia_id=pattuglia_id, challenge_id=challenge_id)
     db.add(new_completion)
 
     # Update score
-    pattuglia = db.query(Pattuglia).filter(Pattuglia.id == pattuglia_id).first()
-    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
-
-    if pattuglia and challenge:
-        pattuglia.current_score += challenge.points
-        db.commit()
+    pattuglia.current_score += challenge.points
+    db.commit()
 
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -423,7 +440,14 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
     if user.role == "unit":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    pattuglie = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).order_by(Pattuglia.current_score.desc()).all()
+    pattuglie = (
+        db.query(Pattuglia)
+        .join(Unita)
+        .filter(Unita.tipo == "Reparto")
+        .options(joinedload(Pattuglia.unita))
+        .order_by(Pattuglia.current_score.desc())
+        .all()
+    )
 
     output = io.StringIO()
     writer = csv.writer(output)

@@ -6,6 +6,8 @@ from passlib.context import CryptContext
 
 from app.database import Base, SessionLocal, engine
 from app.models import (
+    Challenge,
+    Pattuglia,
     Prenotazione,
     Terreno,
     TerrenoCategoria,
@@ -65,6 +67,59 @@ def reset_and_init_db(db=None):
                     db.add(new_unita)
         db.commit()
         print("Units populated from CSV.")
+
+        # --- Pattuglie Population ---
+        pattuglie_file = os.path.join(seed_dir, "pattuglie.csv")
+        if os.path.exists(pattuglie_file):
+            print(f"Reading pattuglie from {pattuglie_file}...")
+            with open(pattuglie_file, encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                required_cols = {"PattugliaName", "UnitName", "CapoPattuglia"}
+                if not required_cols.issubset(set(reader.fieldnames or [])):
+                    raise ValueError(f"pattuglie.csv is missing required columns. Found: {reader.fieldnames}")
+
+                for _row_idx, row in enumerate(reader, start=2):
+                    p_name = row["PattugliaName"].strip()
+                    u_name = row["UnitName"].strip()
+                    capo = row["CapoPattuglia"].strip()
+
+                    unita = db.query(Unita).filter(Unita.name == u_name).first()
+                    if not unita:
+                        print(f"Warning: Unit '{u_name}' not found for pattuglia '{p_name}'. Skipping.")
+                        continue
+
+                    exists = db.query(Pattuglia).filter(Pattuglia.name == p_name).first()
+                    if not exists:
+                        new_patt = Pattuglia(name=p_name, capo_pattuglia=capo, unita_id=unita.id)
+                        db.add(new_patt)
+            db.commit()
+            print("Pattuglie populated from CSV.")
+
+        # --- Sfide Population ---
+        sfide_file = os.path.join(seed_dir, "sfide.csv")
+        if os.path.exists(sfide_file):
+            print(f"Reading sfide from {sfide_file}...")
+            with open(sfide_file, encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                required_cols = {"Name", "Description", "Points", "IsFungo", "RewardTokens"}
+                if not required_cols.issubset(set(reader.fieldnames or [])):
+                    raise ValueError(f"sfide.csv is missing required columns. Found: {reader.fieldnames}")
+
+                for _row_idx, row in enumerate(reader, start=2):
+                    c_name = row["Name"].strip()
+                    c_desc = row["Description"].strip()
+                    c_points = int(row["Points"].strip())
+                    c_isfungo = row["IsFungo"].strip().lower() == "true"
+                    c_tokens = int(row["RewardTokens"].strip() or "0")
+
+                    exists = db.query(Challenge).filter(Challenge.name == c_name).first()
+                    if not exists:
+                        new_challenge = Challenge(
+                            name=c_name, description=c_desc, points=c_points, is_fungo=c_isfungo, reward_tokens=c_tokens
+                        )
+                        db.add(new_challenge)
+            db.commit()
+            print("Sfide populated from CSV.")
 
         # --- Terreni Population ---
         terreni_file = os.path.join(seed_dir, "terreni.csv")

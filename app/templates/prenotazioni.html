@@ -150,18 +150,18 @@
                 </template>
 
                 <!-- Rows (Hours) -->
-                <template x-for="hour in 24" :key="hour">
+                <template x-for="step in 18" :key="step">
                     <contents class="contents"> <!-- Fragment-like -->
                         <div class="bg-gray-50 p-1 text-right text-gray-400 sticky left-0 z-10"
-                            x-text="(hour-1) + ':00'"></div>
+                            x-text="((step + 6) % 24) + ':00'"></div>
 
                         <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
                             <div class="bg-white h-6 relative group border-white/50 border hover:z-30"
-                                :class="getSlotClass(day, hour-1)">
+                                :class="getSlotClass(day, step + 6)">
 
                                 <!-- Tooltip on Hover -->
                                 <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs p-1 rounded whitespace-nowrap z-50 mb-1"
-                                    x-text="getSlotTooltip(day, hour-1)">
+                                    x-text="getSlotTooltip(day, step + 6)">
                                 </div>
                             </div>
                         </template>
@@ -282,6 +282,10 @@
                         <option value="18">18:00</option>
                         <option value="19">19:00</option>
                         <option value="20">20:00</option>
+                        <option value="21">21:00</option>
+                        <option value="22">22:00</option>
+                        <option value="23">23:00</option>
+                        <option value="24">00:00</option>
                     </select>
                 </div>
                 <div>
