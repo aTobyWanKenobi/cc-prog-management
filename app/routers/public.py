@@ -113,9 +113,8 @@ async def cancel_prenotazione(
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
 
     # Units can only cancel their own PENDING reservations
-    if user.role == "unit":
-        if prenotazione.unita_id != user.unita_id or prenotazione.status != "PENDING":
-            raise HTTPException(status_code=403, detail="Non puoi annullare questa prenotazione")
+    if user.role == "unit" and (prenotazione.unita_id != user.unita_id or prenotazione.status != "PENDING"):
+        raise HTTPException(status_code=403, detail="Non puoi annullare questa prenotazione")
 
     prenotazione.status = "CANCELLED"
     db.commit()

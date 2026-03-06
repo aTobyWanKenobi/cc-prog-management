@@ -8,11 +8,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_password, get_password_hash
+from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, get_password_hash, verify_password
 from app.database import Base, engine, get_db
+from app.email_service import send_password_reset_email
 from app.models import User
 from app.routers import admin, public
-from app.email_service import send_password_reset_email
 
 # Create tables (if not using init_db)
 Base.metadata.create_all(bind=engine)
@@ -92,7 +92,9 @@ async def reset_password_page(request: Request, token: str, db: Session = Depend
 
 
 @app.post("/reset-password-confirm", response_class=HTMLResponse)
-async def reset_password_confirm(request: Request, token: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db)):
+async def reset_password_confirm(
+    request: Request, token: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.reset_token == token).first()
     if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
         return templates.TemplateResponse(
@@ -107,7 +109,7 @@ async def reset_password_confirm(request: Request, token: str = Form(...), new_p
 
     return templates.TemplateResponse(
         "login.html", 
-        {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."} # Using error variable nicely in green if possible, or just standard red text for now since login.html expects it
+        {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."}
     )
 
 
