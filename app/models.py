@@ -128,7 +128,7 @@ class Prenotazione(Base):
     start_time: Mapped[datetime] = mapped_column()
     end_time: Mapped[datetime] = mapped_column()
     duration: Mapped[int] = mapped_column()  # Hours (1-4)
-    status: Mapped[str] = mapped_column(default="PENDING")  # PENDING, APPROVED
+    status: Mapped[str] = mapped_column(default="PENDING")  # PENDING, APPROVED, REJECTED, CANCELLED
 
     terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
     unita: Mapped["Unita"] = relationship()
