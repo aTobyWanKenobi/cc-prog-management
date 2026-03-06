@@ -24,7 +24,7 @@ def test_admin_dashboard_access(client, session):
 
     response = client.get("/admin/")
     assert response.status_code == 200
-    assert "Dashboard" in response.text
+    assert "Pannello" in response.text
 
 
 def test_manage_users(client, session):
