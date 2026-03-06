@@ -218,11 +218,24 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             {% if res.status == 'PENDING' %}
-                            <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
-                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors" onclick="return confirm('Annullare questa prenotazione?')">
-                                    Annulla
-                                </button>
-                            </form>
+                                {% if user.role == 'unit' %}
+                                <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors" onclick="return confirm('Annullare questa prenotazione?')">
+                                        Annulla
+                                    </button>
+                                </form>
+                                {% elif user.role in ['tech', 'admin'] %}
+                                <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded mr-1 transition-colors">
+                                        ✅ Approva
+                                    </button>
+                                </form>
+                                <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors" onclick="return confirm('Rifiutare questa prenotazione?')">
+                                        ❌ Rifiuta
+                                    </button>
+                                </form>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
