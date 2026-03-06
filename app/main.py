@@ -75,8 +75,8 @@ async def password_reset_request(request: Request, email: str = Form(...), db: S
 
     # Always return success message to prevent email enumeration
     return templates.TemplateResponse(
-        "password_reset_request.html", 
-        {"request": request, "success": "Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."}
+        "password_reset_request.html",
+        {"request": request, "success": "Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."},
     )
 
 
@@ -85,31 +85,33 @@ async def reset_password_page(request: Request, token: str, db: Session = Depend
     user = db.query(User).filter(User.reset_token == token).first()
     if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
         return templates.TemplateResponse(
-            "password_reset_confirm.html", 
-            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."}
+            "password_reset_confirm.html",
+            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
         )
     return templates.TemplateResponse("password_reset_confirm.html", {"request": request, "token": token})
 
 
 @app.post("/reset-password-confirm", response_class=HTMLResponse)
 async def reset_password_confirm(
-    request: Request, token: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db),
+    request: Request,
+    token: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.reset_token == token).first()
     if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
         return templates.TemplateResponse(
-            "password_reset_confirm.html", 
-            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."}
+            "password_reset_confirm.html",
+            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
         )
-    
+
     user.password_hash = get_password_hash(new_password)
     user.reset_token = None
     user.reset_token_expires_at = None
     db.commit()
 
     return templates.TemplateResponse(
-        "login.html", 
-        {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."}
+        "login.html", {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."}
     )
 
 

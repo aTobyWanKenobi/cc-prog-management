@@ -56,40 +56,39 @@ def test_password_reset(page: Page, live_server: str):
     """
     page.goto(f"{live_server}/login")
     page.click("text=Hai dimenticato la password")
-    
+
     expect(page.locator("text=Setup o Recupero")).to_be_visible()
-    
+
     page.fill('input[name="email"]', "admin@bestiale2026.ch")
     page.click('button[type="submit"]')
-    
+
     expect(page.locator("text=Se l'email esiste")).to_be_visible()
-    
+
     # Extract token from DB
     conn = sqlite3.connect("test_uat.db")
     cursor = conn.cursor()
     cursor.execute("SELECT reset_token FROM users WHERE email='admin@bestiale2026.ch'")
     token = cursor.fetchone()[0]
     conn.close()
-    
+
     assert token is not None
-    
+
     # Visit reset link
     page.goto(f"{live_server}/reset-password?token={token}")
     expect(page.locator("text=Scegli la Nuova Password")).to_be_visible()
-    
+
     page.fill('input[name="new_password"]', "new_admin_pass")
     page.click('button[type="submit"]')
-    
+
     # Should be redirected to login with success message
     expect(page.locator("text=Password aggiornata con successo")).to_be_visible()
-    
-    # Wait for role tabs to be visible and click the Admin tab 
+
+    # Wait for role tabs to be visible and click the Admin tab
     page.click("text=Admin")
 
     # Login with new password
     page.fill('input[name="username"]', "admin")
     page.fill('input[name="password"]', "new_admin_pass")
     page.click('button[type="submit"]')
-    
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
 
+    expect(page.locator("text=Classifica Generale")).to_be_visible()

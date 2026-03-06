@@ -36,7 +36,11 @@ Il link scadrà tra 2 ore. Se non hai richiesto questo reset, ignora questa emai
 
 
 def send_reservation_requested_email(
-    unit_email: str | None, unit_name: str, terrain_name: str, start_time: str, end_time: str,
+    unit_email: str | None,
+    unit_name: str,
+    terrain_name: str,
+    start_time: str,
+    end_time: str,
 ):
     """Notify the unit that their reservation request has been submitted."""
     if not unit_email:
@@ -59,7 +63,11 @@ Buon campo! ⛺""",
 
 
 def send_reservation_approved_email(
-    unit_email: str | None, unit_name: str, terrain_name: str, start_time: str, end_time: str,
+    unit_email: str | None,
+    unit_name: str,
+    terrain_name: str,
+    start_time: str,
+    end_time: str,
 ):
     """Notify the unit that their reservation was approved."""
     if not unit_email:
@@ -80,7 +88,11 @@ Il terreno è riservato per voi. Buona attività! ⛺""",
 
 
 def send_reservation_rejected_email(
-    unit_email: str | None, unit_name: str, terrain_name: str, start_time: str, end_time: str,
+    unit_email: str | None,
+    unit_name: str,
+    terrain_name: str,
+    start_time: str,
+    end_time: str,
 ):
     """Notify the unit that their reservation was rejected."""
     if not unit_email:
