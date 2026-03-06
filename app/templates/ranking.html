@@ -10,6 +10,19 @@
         <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <form action="/" method="get" class="flex items-center space-x-2 glass p-2 rounded-lg shadow-sm">
 
+                <!-- Tipo Unita Filter -->
+                <div class="flex items-center space-x-2 border-r border-gray-300 pr-4">
+                    <label for="tipo_filter" class="text-sm font-medium text-gray-700">Tipo Unit&agrave;:</label>
+                    <select name="tipo_filter" id="tipo_filter" onchange="this.form.submit()"
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-scout-500 focus:border-scout-500 sm:text-sm rounded-md bg-white/80">
+                        <option value="">Tutti</option>
+                        {% for t in tipi_unita %}
+                        <option value="{{ t }}" {% if current_tipo_filter==t %}selected{% endif %}>{{ t }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Sottocampo Filter -->
                 <div class="flex items-center space-x-2">
                     <label for="sottocampo_filter" class="text-sm font-medium text-gray-700">Sottocampo:</label>

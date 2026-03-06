@@ -22,16 +22,23 @@ templates = Jinja2Templates(directory="app/templates")
 async def ranking_page(
     request: Request,
     sottocampo_filter: str | None = None,
+    tipo_filter: str | None = "Reparto",
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
     query = db.query(Pattuglia).join(Unita).options(joinedload(Pattuglia.unita))
 
-    # Filter logic
+    # Filter logic for Sottocampo
     if sottocampo_filter and sottocampo_filter.strip():
         query = query.filter(Unita.sottocampo == sottocampo_filter)
     else:
         sottocampo_filter = None
+
+    # Filter logic for Tipo
+    if tipo_filter and tipo_filter.strip():
+        query = query.filter(Unita.tipo == tipo_filter)
+    else:
+        tipo_filter = None
 
     # Sort by score desc
     pattuglie = query.order_by(Pattuglia.current_score.desc()).all()
@@ -43,7 +50,10 @@ async def ranking_page(
     all_unita = db.query(Unita).order_by(Unita.name).all()
 
     # Get unique sottocampi
-    sottocampi = sorted(list(set(u.sottocampo for u in all_unita)))
+    sottocampi = sorted(list(set(u.sottocampo for u in all_unita if u.sottocampo)))
+
+    # Get unique tipi
+    tipi_unita = sorted(list(set(u.tipo for u in all_unita if u.tipo)))
 
     return templates.TemplateResponse(
         "ranking.html",
@@ -52,7 +62,9 @@ async def ranking_page(
             "pattuglie": pattuglie,
             "unita": all_unita,
             "sottocampi": sottocampi,
+            "tipi_unita": tipi_unita,
             "current_sottocampo_filter": sottocampo_filter,
+            "current_tipo_filter": tipo_filter,
             "user": user,
         },
     )

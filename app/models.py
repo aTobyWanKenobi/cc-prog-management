@@ -44,6 +44,7 @@ class Unita(Base):
     name: Mapped[str] = mapped_column(unique=True, index=True)
     tipo: Mapped[str] = mapped_column(default="Reparto")  # Reparto or Posto
     sottocampo: Mapped[str] = mapped_column(nullable=True)
+    email: Mapped[str | None] = mapped_column(nullable=True)
 
     pattuglie: Mapped[list["Pattuglia"]] = relationship(back_populates="unita")
 
@@ -92,6 +93,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     username: Mapped[str] = mapped_column(unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(unique=True, index=True, nullable=True)
     password_hash: Mapped[str] = mapped_column()
     role: Mapped[str] = mapped_column()  # 'unit', 'tech', 'admin'
     unita_id: Mapped[int | None] = mapped_column(ForeignKey("unita.id"), nullable=True)

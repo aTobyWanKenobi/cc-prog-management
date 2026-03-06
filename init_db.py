@@ -43,7 +43,7 @@ def reset_and_init_db(db=None):
         print(f"Reading units from {unita_file}...")
         with open(unita_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            required_cols = {"UnitName", "Tipo", "Sottocampo"}
+            required_cols = {"UnitName", "Tipo", "Sottocampo", "Email"}
             if not required_cols.issubset(set(reader.fieldnames or [])):
                 raise ValueError(f"unita.csv is missing required columns. Found: {reader.fieldnames}")
 
@@ -51,15 +51,17 @@ def reset_and_init_db(db=None):
                 unit_name = row["UnitName"].strip()
                 tipo = row["Tipo"].strip()
                 sottocampo = row["Sottocampo"].strip()
+                email = row.get("Email", "").strip()
+
                 if not sottocampo:
                     sottocampo = None
 
-                if not unit_name or not tipo:
-                    raise ValueError(f"unita.csv row {row_idx}: UnitName and Tipo are required.")
+                if not unit_name or not tipo or not email:
+                    raise ValueError(f"unita.csv row {row_idx}: UnitName, Tipo, and Email are required.")
 
                 exists = db.query(Unita).filter(Unita.name == unit_name).first()
                 if not exists:
-                    new_unita = Unita(name=unit_name, tipo=tipo, sottocampo=sottocampo)
+                    new_unita = Unita(name=unit_name, tipo=tipo, sottocampo=sottocampo, email=email)
                     db.add(new_unita)
         db.commit()
         print("Units populated from CSV.")
@@ -161,12 +163,16 @@ def reset_and_init_db(db=None):
 
         # --- Users Population ---
         if not db.query(User).filter(User.username == "admin").first():
-            admin_user = User(username="admin", password_hash=get_password_hash("admin"), role="admin")
+            admin_user = User(
+                username="admin", email="admin@bestiale2026.ch", password_hash=get_password_hash("admin"), role="admin"
+            )
             db.add(admin_user)
             print("Admin user created.")
 
         if not db.query(User).filter(User.username == "prog").first():
-            tech_user = User(username="prog", password_hash=get_password_hash("esplo"), role="tech")
+            tech_user = User(
+                username="prog", email="tech@bestiale2026.ch", password_hash=get_password_hash("esplo"), role="tech"
+            )
             db.add(tech_user)
             print("Tech user created.")
 
@@ -175,7 +181,11 @@ def reset_and_init_db(db=None):
             safe_username = "".join(c for c in unit.name if c.isalnum()).lower()
             if not db.query(User).filter(User.username == safe_username).first():
                 unit_user = User(
-                    username=safe_username, password_hash=get_password_hash("scout"), role="unit", unita_id=unit.id
+                    username=safe_username,
+                    email=unit.email,
+                    password_hash=get_password_hash("scout"),
+                    role="unit",
+                    unita_id=unit.id,
                 )
                 db.add(unit_user)
         db.commit()
