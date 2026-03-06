@@ -20,8 +20,11 @@ Subject: {subject}
     logger.info(f"Email sent to {to}: {subject}")
 
 
-def send_password_reset_email(email: str, reset_link: str):
+def send_password_reset_email(email: str | None, reset_link: str):
     """Send password reset link."""
+    if not email:
+        logger.warning("No email provided for password reset, skipping")
+        return
     _print_email(
         to=email,
         subject="Il tuo link per il reset della password - BeSTiale 2026",
