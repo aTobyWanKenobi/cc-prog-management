@@ -141,6 +141,7 @@ def reset_and_init_db(db=None):
                 t_polygon = row["Polygon"].strip()
                 t_description = row.get("Description", "").strip()
                 t_image_urls = row.get("ImageUrls", "[]").strip()
+                t_tipo_accesso = row.get("TipoAccesso", "entrambi").strip()
 
                 if not t_name or not t_center_lat or not t_center_lon or not t_polygon:
                     raise ValueError(f"terreni.csv row {row_idx}: Missing required fields.")
@@ -159,6 +160,7 @@ def reset_and_init_db(db=None):
                         polygon=t_polygon,
                         description=t_description,
                         image_urls=t_image_urls,
+                        tipo_accesso=t_tipo_accesso.lower(),
                     )
                     db.add(new_terreno)
         db.commit()

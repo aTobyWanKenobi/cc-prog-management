@@ -137,6 +137,16 @@ async def create_prenotazione(
     if user.role != "unit" or not user.unita_id:
         raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
 
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    if not terreno:
+        raise HTTPException(status_code=404, detail="Terreno non trovato.")
+
+    tipo_unita = user.unita.tipo.lower() if user.unita else None
+    if tipo_unita and terreno.tipo_accesso != "entrambi" and terreno.tipo_accesso != tipo_unita:
+        raise HTTPException(
+            status_code=403, detail=f"Questo terreno non è disponibile per la tua branca ({tipo_unita.capitalize()})."
+        )
+
     if start_hour < 7 or start_hour + duration > 25:
         raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
 
@@ -408,7 +418,16 @@ async def get_terreni_availability(
     if end_date.tzinfo is not None:
         end_date = end_date.replace(tzinfo=None)
 
-    terreni = db.query(Terreno).all()
+    terreni_query = db.query(Terreno)
+
+    tipo_unita = None
+    if user.role == "unit" and user.unita:
+        tipo_unita = user.unita.tipo.lower()
+
+    if tipo_unita:
+        terreni_query = terreni_query.filter(Terreno.tipo_accesso.in_(["entrambi", tipo_unita]))
+
+    terreni = terreni_query.all()
     results = []
 
     for t in terreni:

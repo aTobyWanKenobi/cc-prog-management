@@ -270,6 +270,7 @@ async def create_terreno(
     center_lat: str = Form(...),
     center_lon: str = Form(...),
     polygon: str = Form(...),
+    tipo_accesso: str = Form("entrambi"),
     db: Session = Depends(get_db),
     user: User = Depends(get_admin_user),
 ):
@@ -283,7 +284,12 @@ async def create_terreno(
         )
 
     new_terreno = Terreno(
-        name=name, tags=normalized_tags, center_lat=center_lat, center_lon=center_lon, polygon=polygon
+        name=name,
+        tags=normalized_tags,
+        center_lat=center_lat,
+        center_lon=center_lon,
+        polygon=polygon,
+        tipo_accesso=tipo_accesso,
     )
     db.add(new_terreno)
     db.commit()
@@ -321,6 +327,7 @@ async def update_terreno(
     center_lat: str = Form(...),
     center_lon: str = Form(...),
     polygon: str = Form(...),
+    tipo_accesso: str = Form("entrambi"),
     db: Session = Depends(get_db),
     user: User = Depends(get_admin_user),
 ):

@@ -41,6 +41,11 @@
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                 <input type="text" name="tags" placeholder="Tags: SPORT, CERIMONIA, NOTTURNO, BIVACCO" required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                <select name="tipo_accesso" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                    <option value="entrambi">Accessibilità: Tutti</option>
+                    <option value="reparto">Solo Reparti</option>
+                    <option value="posto">Solo Posti</option>
+                </select>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input type="text" name="center_lat" placeholder="Latitudine Centro" required
@@ -66,6 +71,8 @@
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Tags
                     </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Accessibilità
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Centro
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">
@@ -83,6 +90,11 @@
                             {{ tag }}
                         </span>
                         {% endfor %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-blue-100 text-blue-800' if t.tipo_accesso == 'reparto' else ('bg-orange-100 text-orange-800' if t.tipo_accesso == 'posto' else 'bg-green-100 text-green-800') }}">
+                            {{ 'Tutti' if t.tipo_accesso == 'entrambi' else t.tipo_accesso | capitalize }}
+                        </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ t.center_lat }}, {{ t.center_lon }}
                     </td>

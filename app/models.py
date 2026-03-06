@@ -115,6 +115,7 @@ class Terreno(Base):
     polygon: Mapped[str] = mapped_column()  # JSON string of coordinates
     description: Mapped[str] = mapped_column(default="")
     image_urls: Mapped[str] = mapped_column(default="[]")  # JSON string of list of URLs
+    tipo_accesso: Mapped[str] = mapped_column(default="entrambi")  # reparto, posto, or entrambi
 
     prenotazioni: Mapped[list["Prenotazione"]] = relationship(back_populates="terreno")
 
