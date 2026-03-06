@@ -1,77 +1,214 @@
-from fastapi import APIRouter, Request, Depends, Form, status, HTTPException
+import csv
+import io
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime
-import csv
-import io
 
+from app.auth import get_authenticated_user, get_tech_user
 from app.database import get_db
-from app.models import User, Unita, Pattuglia, Completion, Challenge, Terreno, Prenotazione
-from app.auth import get_authenticated_user, get_tech_user, create_access_token, verify_password
-from app.email_service import send_reservation_confirmation_email, send_reservation_rejected_email
+from app.email_service import (
+    send_reservation_approved_email,
+    send_reservation_rejected_email,
+    send_reservation_requested_email,
+)
+from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
-router = APIRouter(tags=["public"])
+router = APIRouter(
+    dependencies=[Depends(get_authenticated_user)]  # All public routes require at least being logged in
+)
+
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.post("/login")
-async def login(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse(
-            request, "login.html", {"error": "Username o password non corretti"}
-        )
-
-    access_token = create_access_token(data={"sub": user.username})
-    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-    response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
-    return response
-
-
-@router.get("/ranking", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def ranking_page(
+    request: Request,
+    sottocampo_filter: str | None = None,
+    tipo_filter: str | None = "Reparto",
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    query = db.query(Pattuglia).join(Unita).options(joinedload(Pattuglia.unita))
+
+    # Filter logic for Sottocampo
+    if sottocampo_filter and sottocampo_filter.strip():
+        query = query.filter(Unita.sottocampo == sottocampo_filter)
+    else:
+        sottocampo_filter = None
+
+    # Filter logic for Tipo
+    if tipo_filter and tipo_filter.strip():
+        query = query.filter(Unita.tipo == tipo_filter)
+    else:
+        tipo_filter = None
+
+    # Sort by score desc
+    pattuglie = query.order_by(Pattuglia.current_score.desc()).all()
+
+    # Calculate rank
+    for index, p in enumerate(pattuglie):
+        p.rank = index + 1
+
+    all_unita = db.query(Unita).order_by(Unita.name).all()
+
+    # Get unique sottocampi
+    sottocampi = sorted(list(set(u.sottocampo for u in all_unita if u.sottocampo)))
+
+    # Get unique tipi
+    tipi_unita = sorted(list(set(u.tipo for u in all_unita if u.tipo)))
+
+    return templates.TemplateResponse(
+        request,
+        "ranking.html",
+        {
+            "pattuglie": pattuglie,
+            "unita": all_unita,
+            "sottocampi": sottocampi,
+            "tipi_unita": tipi_unita,
+            "current_sottocampo_filter": sottocampo_filter,
+            "current_tipo_filter": tipo_filter,
+            "user": user,
+        },
+    )
+
+
+@router.get("/prenotazioni", response_class=HTMLResponse)
+async def prenotazioni_page(
     request: Request, db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)
 ):
-    pattuglie = (
-        db.query(Pattuglia)
-        .options(joinedload(Pattuglia.unita))
-        .order_by(Pattuglia.current_score.desc())
-        .all()
-    )
+    user_reservations = []
+    if user.role == "unit" and user.unita_id:
+        user_reservations = (
+            db.query(Prenotazione)
+            .options(joinedload(Prenotazione.terreno))
+            .filter(Prenotazione.unita_id == user.unita_id)
+            .order_by(Prenotazione.start_time)
+            .all()
+        )
+    elif user.role in ["tech", "admin"]:
+        # Tech/admin see all reservations
+        user_reservations = (
+            db.query(Prenotazione)
+            .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+            .order_by(Prenotazione.start_time)
+            .all()
+        )
+
     return templates.TemplateResponse(
-        request, "ranking.html", {"pattuglie": pattuglie, "user": user}
+        request, "prenotazioni.html", {"user": user, "user_reservations": user_reservations}
     )
+
+
+@router.post("/prenotazioni/cancel/{prenotazione_id}")
+async def cancel_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Units can only cancel their own PENDING reservations
+    if user.role == "unit" and (prenotazione.unita_id != user.unita_id or prenotazione.status != "PENDING"):
+        raise HTTPException(status_code=403, detail="Non puoi annullare questa prenotazione")
+
+    prenotazione.status = "CANCELLED"
+    db.commit()
+    return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni")
+async def create_prenotazione(
+    terreno_id: int = Form(...),
+    start_date: str = Form(...),
+    start_hour: int = Form(...),
+    duration: int = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    if user.role != "unit" or not user.unita_id:
+        raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
+
+    if duration < 1 or duration > 4:
+        raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
+
+    start_time = datetime.strptime(f"{start_date} {start_hour}:00", "%Y-%m-%d %H:00")
+    end_time = start_time + timedelta(hours=duration)
+
+    # Check for overlapping reservations on the same terrain
+    overlap = (
+        db.query(Prenotazione)
+        .filter(
+            Prenotazione.terreno_id == terreno_id,
+            Prenotazione.start_time < end_time,
+            Prenotazione.end_time > start_time,
+        )
+        .first()
+    )
+
+    if overlap:
+        return RedirectResponse(url="/prenotazioni?error=overlap", status_code=status.HTTP_303_SEE_OTHER)
+
+    new_prenotazione = Prenotazione(
+        terreno_id=terreno_id,
+        unita_id=user.unita_id,
+        start_time=start_time,
+        end_time=end_time,
+        duration=duration,
+        status="PENDING",
+    )
+    db.add(new_prenotazione)
+    db.commit()
+
+    # Send email notification
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    unita = db.query(Unita).filter(Unita.id == user.unita_id).first()
+    if terreno and unita:
+        send_reservation_requested_email(
+            unit_email=unita.email,
+            unit_name=unita.name,
+            terrain_name=terreno.name,
+            start_time=start_time.strftime("%d/%m %H:%M"),
+            end_time=end_time.strftime("%d/%m %H:%M"),
+        )
+
+    return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/input", response_class=HTMLResponse)
-async def input_page(
-    request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)
-):
-    pattuglie = db.query(Pattuglia).all()
-    challenges = db.query(Challenge).all()
+async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
+    pattuglie = db.query(Pattuglia).order_by(Pattuglia.name).all()
+    challenges = db.query(Challenge).order_by(Challenge.name).all()
     return templates.TemplateResponse(
         request, "input.html", {"pattuglie": pattuglie, "challenges": challenges, "user": user}
     )
 
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
-async def gestione_terreni_page(
-    request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)
-):
-    prenotazioni = (
+async def gestione_terreni_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
+    pending = (
         db.query(Prenotazione)
         .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
         .filter(Prenotazione.status == "PENDING")
+        .order_by(Prenotazione.start_time)
+        .all()
+    )
+    approved = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.status == "APPROVED")
+        .order_by(Prenotazione.start_time.desc())
+        .limit(20)
         .all()
     )
     return templates.TemplateResponse(
-        request, "admin/gestione_terreni.html", {"user": user, "prenotazioni": prenotazioni}
+        request,
+        "gestione_terreni.html",
+        {"user": user, "pending": pending, "approved": approved},
     )
 
 
@@ -90,7 +227,7 @@ async def approve_prenotazione(
     if prenotazione:
         prenotazione.status = "APPROVED"
         db.commit()
-        send_reservation_confirmation_email(
+        send_reservation_approved_email(
             unit_email=prenotazione.unita.email if prenotazione.unita else None,
             unit_name=prenotazione.unita.name if prenotazione.unita else "N/A",
             terrain_name=prenotazione.terreno.name if prenotazione.terreno else "N/A",
@@ -284,7 +421,7 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Posizione", "Pattuglia", "Capo Pattuglia", "Unit\u00e0", "Sottocampo", "Punteggio"])
+    writer.writerow(["Posizione", "Pattuglia", "Capo Pattuglia", "Unità", "Sottocampo", "Punteggio"])
 
     for index, p in enumerate(pattuglie):
         writer.writerow([index + 1, p.name, p.capo_pattuglia, p.unita.name, p.unita.sottocampo, p.current_score])
