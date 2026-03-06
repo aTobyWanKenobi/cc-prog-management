@@ -62,15 +62,19 @@
                     <div class="hidden sm:flex sm:items-center sm:space-x-6 ml-10">
                         <!-- Public Area -->
                         <div class="flex space-x-1 bg-scout-50/80 rounded-lg p-1 border border-scout-200 items-center">
+                            {% if not (user and user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                             <a href="/"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Classifica
                             </a>
-                            {% if user %}
+                            {% endif %}
+                            {% if user and not (user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                             <a href="/timeline"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Timeline
                             </a>
+                            {% endif %}
+                            {% if user %}
                             <a href="/prenotazioni"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Calendario Terreni
@@ -137,9 +141,13 @@
             <!-- Mobile menu -->
             <div class="sm:hidden flex flex-col pb-2 border-t border-gray-200 pt-2 bg-white/50">
                 <div class="flex justify-around px-2">
+                    {% if not (user and user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                     <a href="/" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Classifica</a>
-                    {% if user %}
+                    {% endif %}
+                    {% if user and not (user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                     <a href="/timeline" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Timeline</a>
+                    {% endif %}
+                    {% if user %}
                     <a href="/prenotazioni"
                         class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Calendario</a>
                     {% endif %}

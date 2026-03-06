@@ -7,7 +7,7 @@ from jose import jwt
 from passlib.context import CryptContext
 
 from app.auth import ALGORITHM, SECRET_KEY, create_access_token, verify_password
-from app.models import User
+from app.models import Unita, User
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -29,16 +29,19 @@ def test_jwt_token_creation():
 
 
 def test_login_flow(client, session):
-    # Create user
+    u = Unita(name="Test Unit", tipo="Reparto")
+    session.add(u)
+    session.commit()
+
     hashed_pwd = pwd_context.hash("testpass")
-    user = User(username="testlogin", password_hash=hashed_pwd, role="unit")
+    user = User(username="testlogin", password_hash=hashed_pwd, role="unit", unita_id=u.id)
     session.add(user)
     session.commit()
 
     # 1. Successful Login
     response = client.post(
         "/login",
-        data={"username": "testlogin", "password": "testpass"},
+        data={"username": "testlogin", "password": "testpass", "login_role": "reparto"},
         follow_redirects=False,  # Standard login redirects to / or /admin
     )
     # Allows 302, 303 or 200 depending on implementation. In main.py it redirects.
@@ -48,12 +51,12 @@ def test_login_flow(client, session):
     assert token is not None
 
     # 2. Wrong Password
-    response = client.post("/login", data={"username": "testlogin", "password": "wrongpass"})
+    response = client.post("/login", data={"username": "testlogin", "password": "wrongpass", "login_role": "reparto"})
     assert response.status_code == 200
     assert "Credenziali non valide" in response.text
 
     # 3. Non-existent User
-    response = client.post("/login", data={"username": "ghost", "password": "any"})
+    response = client.post("/login", data={"username": "ghost", "password": "any", "login_role": "reparto"})
     assert response.status_code == 200
     assert "Credenziali non valide" in response.text
 

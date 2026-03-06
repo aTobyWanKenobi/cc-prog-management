@@ -31,6 +31,9 @@ async def ranking_page(
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
+    if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
+        return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
+
     query = db.query(Pattuglia).join(Unita).options(joinedload(Pattuglia.unita))
 
     # Filter logic for Sottocampo
@@ -296,6 +299,9 @@ async def register_completion(
 
 @router.get("/timeline", response_class=HTMLResponse)
 async def timeline_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)):
+    if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
+        return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
+
     completions = (
         db.query(Completion)
         .options(joinedload(Completion.pattuglia), joinedload(Completion.challenge))

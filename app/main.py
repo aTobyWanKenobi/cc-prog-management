@@ -34,15 +34,42 @@ async def login_page(request: Request):
 
 
 @app.post("/login")
-async def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    login_role: str = Form(...),
+    db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(request, "login.html", {"error": "Credenziali non valide"})
 
+    # Validate selected role against actual user role
+    if login_role == "reparto":
+        if user.role != "unit" or not user.unita or user.unita.tipo != "Reparto":
+            return templates.TemplateResponse(request, "login.html", {"error": "L'unità non è un Reparto Esploratori"})
+    elif login_role == "posto":
+        if user.role != "unit" or not user.unita or user.unita.tipo != "Posto":
+            return templates.TemplateResponse(request, "login.html", {"error": "L'unità non è un Posto Pionieri"})
+    elif login_role == "staff" and user.role != "tech":
+        return templates.TemplateResponse(
+            request, "login.html", {"error": "Non sei autorizzato come Staff / Sportello"}
+        )
+    elif login_role == "direzione" and user.role != "admin":
+        return templates.TemplateResponse(
+            request, "login.html", {"error": "Non sei autorizzato come Direzione (Admin)"}
+        )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
-    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    # Redirect Pionieri and Staff/Admin to reservations (since they don't use the ranking for now)
+    redirect_url = "/"
+    if (user.role == "unit" and user.unita and user.unita.tipo == "Posto") or user.role in ["tech", "admin"]:
+        redirect_url = "/prenotazioni"
+
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="access_token", value=f"{access_token}", httponly=True)
     return response
 

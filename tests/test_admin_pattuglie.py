@@ -20,7 +20,7 @@ def setup_admin_and_data(session):
 
 def test_pattuglia_crud(client, session):
     admin, unit = setup_admin_and_data(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     # Create
     response = client.post(
@@ -53,7 +53,7 @@ def test_pattuglia_crud(client, session):
 
 def test_score_recalculation(client, session):
     admin, unit = setup_admin_and_data(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     # Setup: Pattuglia + Challenge + Completion
     p = Pattuglia(name="Lions", capo_pattuglia="Simba", unita_id=unit.id, current_score=10)

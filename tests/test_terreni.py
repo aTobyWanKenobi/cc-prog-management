@@ -17,7 +17,7 @@ def setup_admin(session):
 
 def test_terreno_crud(client, session):
     setup_admin(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     # Create
     response = client.post(
@@ -62,7 +62,7 @@ def test_terreno_crud(client, session):
 def test_reservation_visibility(client, session):
     # Setup data
     setup_admin(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     t = Terreno(name="Forest", tags="BIVACCO", center_lat="0", center_lon="0", polygon="[]")
     u = Unita(name="Scouts", sottocampo="S")

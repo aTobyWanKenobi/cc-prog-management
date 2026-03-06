@@ -21,12 +21,13 @@ def test_login_admin_db(page: Page, live_server: str):
     Test the happy path for Admin DB.
     """
     page.goto(f"{live_server}/login")
+    page.click("button:has-text('Admin')")
     page.fill('input[name="username"]', "admin")
     page.fill('input[name="password"]', "admin")
     page.click('button[type="submit"]')
 
-    # Check admin is logged in (goes to index default)
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
+    # Check admin is logged in (goes to /prenotazioni)
+    expect(page.locator("text=Tutte le Prenotazioni")).to_be_visible()
 
     # Navigate to admin
     page.goto(f"{live_server}/admin")
@@ -38,12 +39,13 @@ def test_login_admin_sportello(page: Page, live_server: str):
     Test the happy path for Admin Sportello (tech).
     """
     page.goto(f"{live_server}/login")
+    page.click("button:has-text('Staff')")
     page.fill('input[name="username"]', "prog")
     page.fill('input[name="password"]', "esplo")
     page.click('button[type="submit"]')
 
-    # Check admin is logged in
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
+    # Check admin is logged in (goes to /prenotazioni)
+    expect(page.locator("text=Tutte le Prenotazioni")).to_be_visible()
 
     # Navigate to input
     page.goto(f"{live_server}/input")
@@ -91,4 +93,4 @@ def test_password_reset(page: Page, live_server: str):
     page.fill('input[name="password"]', "new_admin_pass")
     page.click('button[type="submit"]')
 
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
+    expect(page.locator("text=Tutte le Prenotazioni")).to_be_visible()

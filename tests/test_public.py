@@ -36,14 +36,14 @@ def test_ranking_page_access(client, session):
 
     # Auth user
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
     response = client.get("/")
     assert response.status_code == 200
 
 
 def test_complete_challenge_flow(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
     p, c = setup_basic_game_data(session)
 
     # 1. Complete
@@ -70,7 +70,7 @@ def test_complete_challenge_flow(client, session):
 
 def test_ranking_order(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
 
     u = Unita(name="U1", sottocampo="S1")
     session.add(u)
@@ -93,20 +93,26 @@ def test_ranking_order(client, session):
 def test_export_ranking_permission(client, session):
     # Tech can export
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
     response = client.get("/export/ranking")
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
 
     # Unit user cannot export
     hashed = pwd_context.hash("unit")
-    # Must ensure unique username from other tests if DB not cleared?
-    # Fixture clears DB, so 'unituser' is fine.
-    u_user = User(username="unituser", password_hash=hashed, role="unit")
+    u = Unita(name="Test Unit", tipo="Reparto")
+    session.add(u)
+    session.commit()
+
+    u_user = User(username="unituser", password_hash=hashed, role="unit", unita_id=u.id)
     session.add(u_user)
     session.commit()
 
-    resp = client.post("/login", data={"username": "unituser", "password": "unit"}, follow_redirects=False)
+    resp = client.post(
+        "/login",
+        data={"username": "unituser", "password": "unit", "login_role": "reparto"},
+        follow_redirects=False,
+    )
     assert resp.status_code == 303  # Ensure login worked
 
     response = client.get("/export/ranking")
@@ -116,7 +122,7 @@ def test_export_ranking_permission(client, session):
 def test_other_public_pages(client, session):
     # Setup tech user for input pages
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
 
     # Prenotazioni
     response = client.get("/prenotazioni")
@@ -137,7 +143,7 @@ def test_other_public_pages(client, session):
 
 def test_ranking_filter(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
 
     u1 = Unita(name="U_Filter1", sottocampo="Nord")
     u2 = Unita(name="U_Filter2", sottocampo="Sud")
