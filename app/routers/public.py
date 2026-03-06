@@ -9,6 +9,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth import get_authenticated_user, get_tech_user
 from app.database import get_db
+from app.email_service import (
+    send_reservation_approved_email,
+    send_reservation_rejected_email,
+    send_reservation_requested_email,
+)
 from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
 router = APIRouter(
@@ -160,6 +165,18 @@ async def create_prenotazione(
     db.add(new_prenotazione)
     db.commit()
 
+    # Send email notification
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    unita = db.query(Unita).filter(Unita.id == user.unita_id).first()
+    if terreno and unita:
+        send_reservation_requested_email(
+            unit_email=unita.email,
+            unit_name=unita.name,
+            terrain_name=terreno.name,
+            start_time=start_time.strftime("%d/%m %H:%M"),
+            end_time=end_time.strftime("%d/%m %H:%M"),
+        )
+
     return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -201,10 +218,22 @@ async def approve_prenotazione(
     db: Session = Depends(get_db),
     user: User = Depends(get_tech_user),
 ):
-    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
     if prenotazione:
         prenotazione.status = "APPROVED"
         db.commit()
+        send_reservation_approved_email(
+            unit_email=prenotazione.unita.email if prenotazione.unita else None,
+            unit_name=prenotazione.unita.name if prenotazione.unita else "N/A",
+            terrain_name=prenotazione.terreno.name if prenotazione.terreno else "N/A",
+            start_time=prenotazione.start_time.strftime("%d/%m %H:%M"),
+            end_time=prenotazione.end_time.strftime("%d/%m %H:%M"),
+        )
     return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -214,10 +243,22 @@ async def reject_prenotazione(
     db: Session = Depends(get_db),
     user: User = Depends(get_tech_user),
 ):
-    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
     if prenotazione:
         prenotazione.status = "REJECTED"
         db.commit()
+        send_reservation_rejected_email(
+            unit_email=prenotazione.unita.email if prenotazione.unita else None,
+            unit_name=prenotazione.unita.name if prenotazione.unita else "N/A",
+            terrain_name=prenotazione.terreno.name if prenotazione.terreno else "N/A",
+            start_time=prenotazione.start_time.strftime("%d/%m %H:%M"),
+            end_time=prenotazione.end_time.strftime("%d/%m %H:%M"),
+        )
     return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
