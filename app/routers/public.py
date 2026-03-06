@@ -61,9 +61,9 @@ async def ranking_page(
     tipi_unita = sorted(list(set(u.tipo for u in all_unita if u.tipo)))
 
     return templates.TemplateResponse(
+        request,
         "ranking.html",
         {
-            "request": request,
             "pattuglie": pattuglie,
             "unita": all_unita,
             "sottocampi": sottocampi,
@@ -98,7 +98,7 @@ async def prenotazioni_page(
         )
 
     return templates.TemplateResponse(
-        "prenotazioni.html", {"request": request, "user": user, "user_reservations": user_reservations}
+        request, "prenotazioni.html", {"user": user, "user_reservations": user_reservations}
     )
 
 
@@ -184,7 +184,7 @@ async def input_page(request: Request, db: Session = Depends(get_db), user: User
     pattuglie = db.query(Pattuglia).order_by(Pattuglia.name).all()
     challenges = db.query(Challenge).order_by(Challenge.name).all()
     return templates.TemplateResponse(
-        "input.html", {"request": request, "pattuglie": pattuglie, "challenges": challenges, "user": user}
+        request, "input.html", {"pattuglie": pattuglie, "challenges": challenges, "user": user}
     )
 
 
@@ -206,8 +206,9 @@ async def gestione_terreni_page(request: Request, db: Session = Depends(get_db),
         .all()
     )
     return templates.TemplateResponse(
+        request,
         "gestione_terreni.html",
-        {"request": request, "user": user, "pending": pending, "approved": approved},
+        {"user": user, "pending": pending, "approved": approved},
     )
 
 
@@ -323,9 +324,7 @@ async def timeline_page(request: Request, db: Session = Depends(get_db), user: U
     # No, that might hide legitimate re-completions if allowed (though /complete blocks it).
     # Let's trust unique IDs for now unless the user confirms double database entries.
 
-    return templates.TemplateResponse(
-        "timeline.html", {"request": request, "completions": unique_completions, "user": user}
-    )
+    return templates.TemplateResponse(request, "timeline.html", {"completions": unique_completions, "user": user})
 
 
 # --- API ---

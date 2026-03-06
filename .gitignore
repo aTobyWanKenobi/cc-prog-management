@@ -225,3 +225,6 @@ marimo/_lsp/
 __marimo__/
 
 test_uat.db
+camp.db
+*.db
+*.db-journal

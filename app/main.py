@@ -1,6 +1,6 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -30,14 +30,14 @@ templates = Jinja2Templates(directory="app/templates")
 # Login Routes
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Credenziali non valide"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Credenziali non valide"})
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
@@ -57,7 +57,7 @@ async def logout():
 # Password Reset Routes
 @app.get("/password-reset", response_class=HTMLResponse)
 async def password_reset_page(request: Request):
-    return templates.TemplateResponse("password_reset_request.html", {"request": request})
+    return templates.TemplateResponse(request, "password_reset_request.html")
 
 
 @app.post("/password-reset-request", response_class=HTMLResponse)
@@ -66,7 +66,7 @@ async def password_reset_request(request: Request, email: str = Form(...), db: S
     if user:
         token = secrets.token_urlsafe(32)
         user.reset_token = token
-        user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=2)
+        user.reset_token_expires_at = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=2)
         db.commit()
 
         # In production, domain should be dynamic or injected via env vars
@@ -75,20 +75,26 @@ async def password_reset_request(request: Request, email: str = Form(...), db: S
 
     # Always return success message to prevent email enumeration
     return templates.TemplateResponse(
+        request,
         "password_reset_request.html",
-        {"request": request, "success": "Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."},
+        {"success": "Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."},
     )
 
 
 @app.get("/reset-password", response_class=HTMLResponse)
 async def reset_password_page(request: Request, token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == token).first()
-    if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
+    if (
+        not user
+        or not user.reset_token_expires_at
+        or user.reset_token_expires_at < datetime.now(UTC).replace(tzinfo=None)
+    ):
         return templates.TemplateResponse(
+            request,
             "password_reset_confirm.html",
-            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
+            {"error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
         )
-    return templates.TemplateResponse("password_reset_confirm.html", {"request": request, "token": token})
+    return templates.TemplateResponse(request, "password_reset_confirm.html", {"token": token})
 
 
 @app.post("/reset-password-confirm", response_class=HTMLResponse)
@@ -99,10 +105,15 @@ async def reset_password_confirm(
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.reset_token == token).first()
-    if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
+    if (
+        not user
+        or not user.reset_token_expires_at
+        or user.reset_token_expires_at < datetime.now(UTC).replace(tzinfo=None)
+    ):
         return templates.TemplateResponse(
+            request,
             "password_reset_confirm.html",
-            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
+            {"error": "Il link è invalido o scaduto. Richiedi un nuovo reset."},
         )
 
     user.password_hash = get_password_hash(new_password)
@@ -111,7 +122,7 @@ async def reset_password_confirm(
     db.commit()
 
     return templates.TemplateResponse(
-        "login.html", {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."}
+        request, "login.html", {"error": "Password aggiornata con successo. Ora puoi fare il login."}
     )
 
 

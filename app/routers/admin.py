@@ -34,8 +34,9 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), user:
 
     unita = db.query(Unita).all()
     return templates.TemplateResponse(
+        request,
         "admin_dashboard.html",
-        {"request": request, "completions": completions, "unita": unita, "user": user, "active_tab": "dashboard"},
+        {"completions": completions, "unita": unita, "user": user, "active_tab": "dashboard"},
     )
 
 
@@ -56,8 +57,9 @@ async def admin_pattuglie(request: Request, db: Session = Depends(get_db), user:
     pattuglie = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).all()
     unita = db.query(Unita).all()
     return templates.TemplateResponse(
+        request,
         "admin_pattuglie.html",
-        {"request": request, "pattuglie": pattuglie, "unita": unita, "user": user, "active_tab": "pattuglie"},
+        {"pattuglie": pattuglie, "unita": unita, "user": user, "active_tab": "pattuglie"},
     )
 
 
@@ -90,8 +92,9 @@ async def edit_pattuglia_form(
     )
 
     return templates.TemplateResponse(
+        request,
         "edit_pattuglia.html",
-        {"request": request, "pattuglia": pattuglia, "unita": unita, "completions": completions, "user": user},
+        {"pattuglia": pattuglia, "unita": unita, "completions": completions, "user": user},
     )
 
 
@@ -127,8 +130,9 @@ async def delete_pattuglia(pattuglia_id: int, db: Session = Depends(get_db)):
 async def admin_challenges(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     challenges = db.query(Challenge).all()
     return templates.TemplateResponse(
+        request,
         "admin_challenges.html",
-        {"request": request, "challenges": challenges, "user": user, "active_tab": "challenges"},
+        {"challenges": challenges, "user": user, "active_tab": "challenges"},
     )
 
 
@@ -167,7 +171,7 @@ async def edit_challenge_form(
     )
 
     return templates.TemplateResponse(
-        "edit_challenge.html", {"request": request, "challenge": challenge, "completions": completions, "user": user}
+        request, "edit_challenge.html", {"challenge": challenge, "completions": completions, "user": user}
     )
 
 
@@ -232,7 +236,7 @@ async def delete_challenge(challenge_id: int, db: Session = Depends(get_db)):
 async def admin_users(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     users = db.query(User).options(joinedload(User.unita)).all()
     return templates.TemplateResponse(
-        "admin_users.html", {"request": request, "users": users, "user": user, "active_tab": "users"}
+        request, "admin_users.html", {"users": users, "user": user, "active_tab": "users"}
     )
 
 
@@ -254,7 +258,7 @@ async def reset_user_password(user_id: int, password: str = Form(...), db: Sessi
 async def admin_terreni(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     terreni = db.query(Terreno).all()
     return templates.TemplateResponse(
-        "admin_terreni.html", {"request": request, "user": user, "terreni": terreni, "active_tab": "terreni"}
+        request, "admin_terreni.html", {"user": user, "terreni": terreni, "active_tab": "terreni"}
     )
 
 
@@ -302,8 +306,9 @@ async def edit_terreno(
     )
 
     return templates.TemplateResponse(
+        request,
         "edit_terreno.html",
-        {"request": request, "user": user, "terreno": terreno, "prenotazioni": prenotazioni, "active_tab": "terreni"},
+        {"user": user, "terreno": terreno, "prenotazioni": prenotazioni, "active_tab": "terreni"},
     )
 
 
