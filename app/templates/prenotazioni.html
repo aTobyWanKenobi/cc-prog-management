@@ -218,6 +218,11 @@
                             class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500"></textarea>
                     </div>
                 </div>
+
+                <div x-show="isSelectionOverlappingPending()" class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800" style="display: none;">
+                    <strong>Attenzione:</strong> C'è già una richiesta pendente per questo orario, ma puoi comunque inviare la tua. Gli Admin valuteranno entrambe le richieste.
+                </div>
+
                 <div class="mt-6 flex flex-col space-y-3">
                     <p class="text-sm text-gray-500 text-center">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
                     <button type="submit" :disabled="!selectedStartDate || !selectedStartHour"
@@ -496,8 +501,15 @@
             getSlotClass(day, hour) {
                 if (!this.selectedTerrain) return '';
 
-                let isBooked = this.isSlotBooked(day, hour);
-                if (isBooked) return 'bg-indigo-100 border-indigo-200 cursor-not-allowed';
+                let isApproved = this.isSlotApproved(day, hour);
+                if (isApproved) return 'bg-red-500 border-red-600 opacity-90 cursor-not-allowed';
+
+                let isPending = this.isSlotPending(day, hour);
+                if (isPending) {
+                     let isSelected = this.isSlotSelected(day, hour);
+                     if (isSelected) return 'bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+                     return 'bg-yellow-400 border-yellow-500 opacity-90 cursor-pointer hover:bg-yellow-300';
+                }
 
                 let isSelected = this.isSlotSelected(day, hour);
                 if (isSelected) return 'bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
@@ -505,15 +517,40 @@
                 return 'cursor-pointer hover:bg-scout-100';
             },
 
-            isSlotBooked(day, hour) {
+            isSlotApproved(day, hour) {
                 let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
                 let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
 
                 return this.selectedTerrain.reservations.some(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (rStart < slotEnd && rEnd > slotStart);
+                    return (r.status === 'APPROVED' && rStart < slotEnd && rEnd > slotStart);
                 });
+            },
+
+            isSlotPending(day, hour) {
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                return this.selectedTerrain.reservations.some(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (r.status === 'PENDING' && rStart < slotEnd && rEnd > slotStart);
+                });
+            },
+
+            isSelectionOverlappingPending() {
+                if (!this.selectedStartDate) return false;
+                let parts = this.selectedStartDate.split('-');
+                let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+
+                let startH = parseInt(this.selectedStartHour);
+                let endH = startH + parseInt(this.selectedDuration) - 1;
+
+                for (let h = startH; h <= endH; h++) {
+                    if (this.isSlotPending(selTime, h)) return true;
+                }
+                return false;
             },
 
             formatDateForInput(date) {
@@ -522,7 +559,7 @@
             },
 
             startDrag(day, hour) {
-                if (this.isSlotBooked(day, hour)) return;
+                if (this.isSlotApproved(day, hour)) return;
                 this.isDragging = true;
                 this.dragStartDay = new Date(day).getTime();
                 this.dragStartHour = hour;
@@ -552,7 +589,7 @@
 
                 let valid = true;
                 for (let h = startH; h <= endH; h++) {
-                    if (this.isSlotBooked(this.dragStartDay, h)) {
+                    if (this.isSlotApproved(this.dragStartDay, h)) {
                         valid = false; break;
                     }
                 }

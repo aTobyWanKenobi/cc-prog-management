@@ -159,6 +159,7 @@ async def create_prenotazione(
         db.query(Prenotazione)
         .filter(
             Prenotazione.terreno_id == terreno_id,
+            Prenotazione.status == "APPROVED",
             Prenotazione.start_time < end_time,
             Prenotazione.end_time > start_time,
         )
@@ -262,6 +263,23 @@ async def approve_prenotazione(
     )
     if prenotazione:
         prenotazione.status = "APPROVED"
+
+        # Reject overlapping PENDING reservations
+        overlapping = (
+            db.query(Prenotazione)
+            .filter(
+                Prenotazione.terreno_id == prenotazione.terreno_id,
+                Prenotazione.id != prenotazione.id,
+                Prenotazione.status == "PENDING",
+                Prenotazione.start_time < prenotazione.end_time,
+                Prenotazione.end_time > prenotazione.start_time,
+            )
+            .all()
+        )
+
+        for overlap in overlapping:
+            overlap.status = "REJECTED"
+
         db.commit()
         send_reservation_approved_email(
             unit_email=prenotazione.unita.email if prenotazione.unita else None,
@@ -422,20 +440,21 @@ async def get_terreni_availability(
 
             # Let's calculate covered duration
             total_duration = (end_date - start_date).total_seconds()
-            covered_duration = 0
+            approved_covered = 0
+            pending_covered = 0
 
-            # This is complex because reservations might overlap each other
-            # (though DB shouldn't allow it for same terrain)
-            # Assuming non-overlapping reservations for same terrain:
             for r in reservations:
-                # Intersect reservation [r.start, r.end] with window [start, end]
                 overlap_start = max(r.start_time, start_date)
                 overlap_end = min(r.end_time, end_date)
-                covered_duration += max(0, (overlap_end - overlap_start).total_seconds())
+                dur = max(0, (overlap_end - overlap_start).total_seconds())
+                if getattr(r, "status", "APPROVED") == "APPROVED":
+                    approved_covered += dur
+                elif getattr(r, "status", "") == "PENDING":
+                    pending_covered += dur
 
-            if covered_duration >= total_duration:
+            if approved_covered >= total_duration:
                 status = "BOOKED"
-            elif covered_duration > 0:
+            elif approved_covered > 0 or pending_covered > 0:
                 status = "PARTIAL"
 
         results.append(
