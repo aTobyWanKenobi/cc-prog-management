@@ -1,5 +1,6 @@
 import os
-from datetime import timedelta
+import secrets
+from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,10 +8,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_password
+from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_password, get_password_hash
 from app.database import Base, engine, get_db
 from app.models import User
 from app.routers import admin, public
+from app.email_service import send_password_reset_email
 
 # Create tables (if not using init_db)
 Base.metadata.create_all(bind=engine)
@@ -50,6 +52,63 @@ async def logout():
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
+
+
+# Password Reset Routes
+@app.get("/password-reset", response_class=HTMLResponse)
+async def password_reset_page(request: Request):
+    return templates.TemplateResponse("password_reset_request.html", {"request": request})
+
+
+@app.post("/password-reset-request", response_class=HTMLResponse)
+async def password_reset_request(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        token = secrets.token_urlsafe(32)
+        user.reset_token = token
+        user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=2)
+        db.commit()
+
+        # In production, domain should be dynamic or injected via env vars
+        reset_link = f"{request.base_url}reset-password?token={token}"
+        send_password_reset_email(user.email, reset_link)
+
+    # Always return success message to prevent email enumeration
+    return templates.TemplateResponse(
+        "password_reset_request.html", 
+        {"request": request, "success": "Se l'email esiste, ti abbiamo inviato un link per reimpostare la password."}
+    )
+
+
+@app.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
+        return templates.TemplateResponse(
+            "password_reset_confirm.html", 
+            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."}
+        )
+    return templates.TemplateResponse("password_reset_confirm.html", {"request": request, "token": token})
+
+
+@app.post("/reset-password-confirm", response_class=HTMLResponse)
+async def reset_password_confirm(request: Request, token: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user or not user.reset_token_expires_at or user.reset_token_expires_at < datetime.utcnow():
+        return templates.TemplateResponse(
+            "password_reset_confirm.html", 
+            {"request": request, "error": "Il link è invalido o scaduto. Richiedi un nuovo reset."}
+        )
+    
+    user.password_hash = get_password_hash(new_password)
+    user.reset_token = None
+    user.reset_token_expires_at = None
+    db.commit()
+
+    return templates.TemplateResponse(
+        "login.html", 
+        {"request": request, "error": "Password aggiornata con successo. Ora puoi fare il login."} # Using error variable nicely in green if possible, or just standard red text for now since login.html expects it
+    )
 
 
 @app.middleware("http")

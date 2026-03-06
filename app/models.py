@@ -98,6 +98,9 @@ class User(Base):
     role: Mapped[str] = mapped_column()  # 'unit', 'tech', 'admin'
     unita_id: Mapped[int | None] = mapped_column(ForeignKey("unita.id"), nullable=True)
 
+    reset_token: Mapped[str | None] = mapped_column(unique=True, index=True, nullable=True)
+    reset_token_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
     unita: Mapped[Optional["Unita"]] = relationship()
 
 
