@@ -151,8 +151,17 @@ cython_debug/
 #  it is better to maintain it as a separate template.
 # .idea
 
+# Abstra
+# Abstra is an AI-powered process automation framework.
+# Ignore directories containing user credentials, local state, and settings.
+# Learn more at https://abstra.io/docs
+.abstra/
+
+# Antigravity/Gemini Agent
+.agent/
+
 # VS Code
-# .vscode
+.vscode/
 
 # Local configuration
 config.local.yaml
