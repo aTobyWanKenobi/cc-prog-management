@@ -19,7 +19,7 @@ def test_terreno_crud(client, session):
     setup_admin(session)
     client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
-    # Create
+    # Create with tipo_accesso
     response = client.post(
         "/admin/terreni",
         data={
@@ -28,6 +28,7 @@ def test_terreno_crud(client, session):
             "center_lat": "46.1",
             "center_lon": "9.1",
             "polygon": "[[0,0],[1,1]]",
+            "tipo_accesso": "reparto",
         },
         follow_redirects=False,
     )
@@ -36,8 +37,9 @@ def test_terreno_crud(client, session):
     t = session.query(Terreno).filter(Terreno.name == "Football Field").first()
     assert t is not None
     assert t.tags == "SPORT,BIVACCO"
+    assert t.tipo_accesso == "reparto"
 
-    # Edit
+    # Edit with different tipo_accesso
     response = client.post(
         f"/admin/terreni/{t.id}",
         data={
@@ -46,12 +48,14 @@ def test_terreno_crud(client, session):
             "center_lat": "46.2",
             "center_lon": "9.2",
             "polygon": "[[0,0],[2,2]]",
+            "tipo_accesso": "entrambi",
         },
         follow_redirects=False,
     )
     assert response.status_code == 303
     session.refresh(t)
     assert t.name == "Soccer Field"
+    assert t.tipo_accesso == "entrambi"
 
     # Delete
     response = client.post(f"/admin/terreni/{t.id}/delete", follow_redirects=False)

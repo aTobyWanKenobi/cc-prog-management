@@ -349,6 +349,7 @@ async def update_terreno(
     terreno.center_lat = center_lat
     terreno.center_lon = center_lon
     terreno.polygon = polygon
+    terreno.tipo_accesso = tipo_accesso
 
     db.commit()
     return RedirectResponse(url=f"/admin/terreni/{terreno_id}", status_code=status.HTTP_303_SEE_OTHER)

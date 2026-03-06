@@ -554,7 +554,7 @@ async def post_supporto(
     try:
         user_name = user.unita.name if user.unita else user.username
         role = user.role
-        email = user.email if user.email else (user.unita.email if hasattr(user, "unita") and user.unita else None)
+        email = user.email if user.email else (user.unita.email if user.unita else None)
         send_support_email(user_email=email, user_name=user_name, subject=subject, message=message, role=role)
         return templates.TemplateResponse(request, "support.html", {"user": user, "success": True})
     except Exception as e:
