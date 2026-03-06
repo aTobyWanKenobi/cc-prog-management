@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -89,6 +89,52 @@ async def prenotazioni_page(
     )
 
 
+@router.post("/prenotazioni")
+async def create_prenotazione(
+    terreno_id: int = Form(...),
+    start_date: str = Form(...),
+    start_hour: int = Form(...),
+    duration: int = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    if user.role != "unit" or not user.unita_id:
+        raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
+
+    if duration < 1 or duration > 4:
+        raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
+
+    start_time = datetime.strptime(f"{start_date} {start_hour}:00", "%Y-%m-%d %H:00")
+    end_time = start_time + timedelta(hours=duration)
+
+    # Check for overlapping reservations on the same terrain
+    overlap = (
+        db.query(Prenotazione)
+        .filter(
+            Prenotazione.terreno_id == terreno_id,
+            Prenotazione.start_time < end_time,
+            Prenotazione.end_time > start_time,
+        )
+        .first()
+    )
+
+    if overlap:
+        return RedirectResponse(url="/prenotazioni?error=overlap", status_code=status.HTTP_303_SEE_OTHER)
+
+    new_prenotazione = Prenotazione(
+        terreno_id=terreno_id,
+        unita_id=user.unita_id,
+        start_time=start_time,
+        end_time=end_time,
+        duration=duration,
+        status="PENDING",
+    )
+    db.add(new_prenotazione)
+    db.commit()
+
+    return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/input", response_class=HTMLResponse)
 async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
     pattuglie = db.query(Pattuglia).order_by(Pattuglia.name).all()
@@ -99,8 +145,52 @@ async def input_page(request: Request, db: Session = Depends(get_db), user: User
 
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
-async def gestione_terreni_page(request: Request, user: User = Depends(get_tech_user)):
-    return templates.TemplateResponse("gestione_terreni.html", {"request": request, "user": user})
+async def gestione_terreni_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
+    pending = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.status == "PENDING")
+        .order_by(Prenotazione.start_time)
+        .all()
+    )
+    approved = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.status == "APPROVED")
+        .order_by(Prenotazione.start_time.desc())
+        .limit(20)
+        .all()
+    )
+    return templates.TemplateResponse(
+        "gestione_terreni.html",
+        {"request": request, "user": user, "pending": pending, "approved": approved},
+    )
+
+
+@router.post("/gestione-terreni/approve/{prenotazione_id}")
+async def approve_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_tech_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if prenotazione:
+        prenotazione.status = "APPROVED"
+        db.commit()
+    return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/gestione-terreni/reject/{prenotazione_id}")
+async def reject_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_tech_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if prenotazione:
+        prenotazione.status = "REJECTED"
+        db.commit()
+    return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/complete")

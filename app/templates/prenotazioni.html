@@ -222,6 +222,63 @@
     </div>
     {% endif %}
 
+    <!-- Booking Request Form (Units Only) -->
+    {% if user.role == 'unit' %}
+    <div x-show="selectedTerrain" class="mt-6 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+        style="display: none;">
+        <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
+            <h3 class="font-bold text-blue-800">Richiedi Prenotazione</h3>
+        </div>
+        <form action="/prenotazioni" method="POST" class="p-6">
+            <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Data</label>
+                    <input type="date" name="start_date" value="2026-07-25" required
+                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
+                    <select name="start_hour" required
+                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                        <option value="7">07:00</option>
+                        <option value="8">08:00</option>
+                        <option value="9">09:00</option>
+                        <option value="10">10:00</option>
+                        <option value="11">11:00</option>
+                        <option value="12">12:00</option>
+                        <option value="13">13:00</option>
+                        <option value="14" selected>14:00</option>
+                        <option value="15">15:00</option>
+                        <option value="16">16:00</option>
+                        <option value="17">17:00</option>
+                        <option value="18">18:00</option>
+                        <option value="19">19:00</option>
+                        <option value="20">20:00</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Durata (ore)</label>
+                    <select name="duration" required
+                        class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                        <option value="1">1 ora</option>
+                        <option value="2" selected>2 ore</option>
+                        <option value="3">3 ore</option>
+                        <option value="4">4 ore</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between">
+                <p class="text-sm text-gray-500">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
+                <button type="submit"
+                    class="bg-scout-600 hover:bg-scout-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
+                    Invia Richiesta
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
 </div>
 
 <script>
