@@ -33,7 +33,7 @@ def reset_and_init_db(db=None):
         Base.metadata.create_all(bind=engine)
         print("Tables created successfully.")
 
-        seed_dir = os.path.join("data", "seed")
+        seed_dir = os.getenv("SEED_DIR", os.path.join("data", "seed"))
 
         # --- Units Population ---
         unita_file = os.path.join(seed_dir, "unita.csv")
@@ -41,7 +41,7 @@ def reset_and_init_db(db=None):
             raise FileNotFoundError(f"Missing required seed file: {unita_file}")
 
         print(f"Reading units from {unita_file}...")
-        with open(unita_file, encoding="utf-8") as f:
+        with open(unita_file, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             required_cols = {"UnitName", "Tipo", "Sottocampo", "Email"}
             if not required_cols.issubset(set(reader.fieldnames or [])):
@@ -72,7 +72,7 @@ def reset_and_init_db(db=None):
             raise FileNotFoundError(f"Missing required seed file: {terreni_file}")
 
         print(f"Reading terreni from {terreni_file}...")
-        with open(terreni_file, encoding="utf-8") as f:
+        with open(terreni_file, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             required_cols = {"Name", "Tags", "CenterLat", "CenterLon", "Polygon"}
             if not required_cols.issubset(set(reader.fieldnames or [])):
@@ -113,7 +113,7 @@ def reset_and_init_db(db=None):
         prenotazioni_file = os.path.join(seed_dir, "riservazioni_test.csv")
         if os.path.exists(prenotazioni_file):
             print(f"Reading reservations from {prenotazioni_file}...")
-            with open(prenotazioni_file, encoding="utf-8") as f:
+            with open(prenotazioni_file, encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
                 required_cols = {"TerrenoName", "UnitName", "StartTime", "Duration", "Status"}
                 if not required_cols.issubset(set(reader.fieldnames or [])):
