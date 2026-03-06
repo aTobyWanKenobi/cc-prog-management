@@ -428,6 +428,8 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
 
     output.seek(0)
 
-    response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
+    # Explicitly convert to bytes to avoid encoding issues in streaming
+    csv_data = output.getvalue()
+    response = StreamingResponse(io.BytesIO(csv_data.encode("utf-8")), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=classifica_scout.csv"
     return response
