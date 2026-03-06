@@ -165,14 +165,20 @@ cython_debug/
 # Local configuration
 config.local.yaml
 params.local.yaml
+credentials.txt
 
 # Data
 data/results/
 data/raw/
 !data/seed/
+data/seed/riservazioni_test.csv
+data/seed/unita.csv
 
 # Logs
 logs/
+
+# Geographic data
+geo/
 
 # SQLite databases
 test_uat.db
