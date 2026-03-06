@@ -27,9 +27,9 @@ def send_password_reset_email(email: str | None, reset_link: str):
         return
     _print_email(
         to=email,
-        subject="Il tuo link per il reset della password - BeSTiale 2026",
+        subject="Il tuo link per il reset della password - BeSTiapp",
         body=f"""Ciao,
-Hai richiesto il reset della password o l'attivazione dell'account per il Punteggiometro BeSTiale 2026.
+Hai richiesto il reset della password o l'attivazione dell'account per BeSTiapp.
 
 Clicca sul seguente link per impostare una nuova password:
 {reset_link}
