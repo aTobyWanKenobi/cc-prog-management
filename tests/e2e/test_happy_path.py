@@ -94,3 +94,25 @@ def test_password_reset(page: Page, live_server: str):
     page.click('button[type="submit"]')
 
     expect(page.locator("text=Tutte le Prenotazioni")).to_be_visible()
+
+
+def test_submit_support_ticket(page: Page, live_server: str):
+    """
+    Test the support ticket submission flow.
+    """
+    page.goto(f"{live_server}/login")
+    page.fill('input[name="username"]', "faido")
+    page.fill('input[name="password"]', "scout")
+    page.click('button[type="submit"]')
+
+    expect(page.locator("text=Classifica Generale")).to_be_visible()
+
+    # Desktop nav link for Supporto
+    page.click("text=Supporto")
+    expect(page.locator("text=Contatta il Supporto")).to_be_visible()
+
+    page.fill('input[name="subject"]', "Test Subject E2E")
+    page.fill('textarea[name="message"]', "This is a test message from Playwright.")
+    page.click('button[type="submit"]')
+
+    expect(page.locator("text=inviata con successo")).to_be_visible()
