@@ -39,6 +39,17 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), user:
     )
 
 
+@router.post("/reset-db")
+async def reset_database(request: Request, user: User = Depends(get_admin_user)):
+    import init_db
+
+    try:
+        init_db.reset_and_init_db()
+    except Exception as e:
+        print(f"Error checking DB reset: {e}")
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
 # --- Pattuglie Management ---
 @router.get("/pattuglie", response_class=HTMLResponse)
 async def admin_pattuglie(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):

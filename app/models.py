@@ -42,7 +42,8 @@ class Unita(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(unique=True, index=True)
-    sottocampo: Mapped[str] = mapped_column()
+    tipo: Mapped[str] = mapped_column(default="Reparto")  # Reparto or Posto
+    sottocampo: Mapped[str] = mapped_column(nullable=True)
 
     pattuglie: Mapped[list["Pattuglia"]] = relationship(back_populates="unita")
 

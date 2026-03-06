@@ -32,6 +32,15 @@
         </nav>
     </div>
 
+    <!-- System Actions -->
+    <div class="mb-8 pl-4">
+        <form action="/admin/reset-db" method="post" onsubmit="return confirm('ATTENZIONE: Sei sicuro? Questo cancellerà tutti i dati e li ricaricherà dai CSV nella cartella data/seed/.');">
+            <button type="submit" class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-sm border border-transparent">
+                Reset & Inizializza Database
+            </button>
+        </form>
+    </div>
+
     <!-- Log -->
     <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
         <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">

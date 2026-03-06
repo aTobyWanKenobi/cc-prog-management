@@ -1,9 +1,17 @@
+import csv
+import os
 from datetime import datetime, timedelta
 
 from passlib.context import CryptContext
 
 from app.database import Base, SessionLocal, engine
-from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
+from app.models import (
+    Prenotazione,
+    Terreno,
+    TerrenoCategoria,
+    Unita,
+    User,
+)
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -12,141 +20,77 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def init_db():
-    print("Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("Tables created successfully.")
+def reset_and_init_db(db=None):
+    own_session = False
+    if db is None:
+        db = SessionLocal()
+        own_session = True
 
-    db = SessionLocal()
+    try:
+        print("Dropping all tables...")
+        Base.metadata.drop_all(bind=engine)
+        print("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Tables created successfully.")
 
-    # --- Units Population from CSV ---
-    import csv
-    import os
+        seed_dir = os.path.join("data", "seed")
 
-    if os.path.exists("units.csv"):
-        print("Reading units from units.csv...")
-        with open("units.csv", encoding="utf-8") as f:
+        # --- Units Population ---
+        unita_file = os.path.join(seed_dir, "unita.csv")
+        if not os.path.exists(unita_file):
+            raise FileNotFoundError(f"Missing required seed file: {unita_file}")
+
+        print(f"Reading units from {unita_file}...")
+        with open(unita_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            for row in reader:
-                unit_name = row["UnitName"]
-                sottocampo = row["Sottocampo"]
+            required_cols = {"UnitName", "Tipo", "Sottocampo"}
+            if not required_cols.issubset(set(reader.fieldnames or [])):
+                raise ValueError(f"unita.csv is missing required columns. Found: {reader.fieldnames}")
+
+            for row_idx, row in enumerate(reader, start=2):
+                unit_name = row["UnitName"].strip()
+                tipo = row["Tipo"].strip()
+                sottocampo = row["Sottocampo"].strip()
+                if not sottocampo:
+                    sottocampo = None
+
+                if not unit_name or not tipo:
+                    raise ValueError(f"unita.csv row {row_idx}: UnitName and Tipo are required.")
 
                 exists = db.query(Unita).filter(Unita.name == unit_name).first()
                 if not exists:
-                    new_unita = Unita(name=unit_name, sottocampo=sottocampo)
+                    new_unita = Unita(name=unit_name, tipo=tipo, sottocampo=sottocampo)
                     db.add(new_unita)
         db.commit()
         print("Units populated from CSV.")
-    else:
-        print("units.csv not found, skipping unit population.")
 
-    # --- Pattuglie Population from CSV ---
-    if os.path.exists("pattuglie.csv"):
-        print("Reading pattuglie from pattuglie.csv...")
-        with open("pattuglie.csv", encoding="utf-8") as f:
+        # --- Terreni Population ---
+        terreni_file = os.path.join(seed_dir, "terreni.csv")
+        if not os.path.exists(terreni_file):
+            raise FileNotFoundError(f"Missing required seed file: {terreni_file}")
+
+        print(f"Reading terreni from {terreni_file}...")
+        with open(terreni_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            for row in reader:
-                p_name = row["Name"]
-                p_capo = row["CapoPattuglia"]
-                unit_name = row["UnitName"]
+            required_cols = {"Name", "Tags", "CenterLat", "CenterLon", "Polygon"}
+            if not required_cols.issubset(set(reader.fieldnames or [])):
+                raise ValueError(f"terreni.csv is missing required columns. Found: {reader.fieldnames}")
 
-                # Find unit
-                unit = db.query(Unita).filter(Unita.name == unit_name).first()
-                if unit:
-                    exists = db.query(Pattuglia).filter(Pattuglia.name == p_name).first()
-                    if not exists:
-                        new_pattuglia = Pattuglia(name=p_name, capo_pattuglia=p_capo, unita_id=unit.id, current_score=0)
-                        db.add(new_pattuglia)
-                else:
-                    print(f"Warning: Unit '{unit_name}' not found for pattuglia '{p_name}'")
-        db.commit()
-        print("Pattuglie populated from CSV.")
-    else:
-        print("pattuglie.csv not found, skipping pattuglie population.")
-
-    # --- Challenges Population from CSV ---
-    if os.path.exists("challenges.csv"):
-        print("Reading challenges from challenges.csv...")
-        with open("challenges.csv", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                c_name = row["Name"]
-                c_desc = row["Description"]
-                c_points = int(row["Points"])
-                c_tokens = int(row["RewardTokens"])
-                c_fungo = row["IsFungo"].lower() == "true"
-
-                exists = db.query(Challenge).filter(Challenge.name == c_name).first()
-                if not exists:
-                    new_challenge = Challenge(
-                        name=c_name, description=c_desc, points=c_points, reward_tokens=c_tokens, is_fungo=c_fungo
-                    )
-                    db.add(new_challenge)
-        db.commit()
-        print("Challenges populated from CSV.")
-    else:
-        print("challenges.csv not found, skipping challenges population.")
-
-    # --- Completions Population from CSV ---
-    if os.path.exists("completions.csv"):
-        print("Reading completions from completions.csv...")
-        with open("completions.csv", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                p_name = row["PattugliaName"]
-                c_name = row["ChallengeName"]
-                timestamp_str = row["Timestamp"]
-
-                pattuglia = db.query(Pattuglia).filter(Pattuglia.name == p_name).first()
-                challenge = db.query(Challenge).filter(Challenge.name == c_name).first()
-
-                if pattuglia and challenge:
-                    timestamp = datetime.fromisoformat(timestamp_str)
-
-                    # Check if already exists (optional, but good for idempotency
-                    # if running multiple times without drop)
-                    # Since we drop tables in reset_db, we can just add.
-                    new_completion = Completion(
-                        pattuglia_id=pattuglia.id, challenge_id=challenge.id, timestamp=timestamp
-                    )
-                    db.add(new_completion)
-
-                    # Update score
-                    pattuglia.current_score += challenge.points
-                else:
-                    print(f"Warning: Pattuglia '{p_name}' or Challenge '{c_name}' not found.")
-        db.commit()
-        print("Completions populated from CSV.")
-        db.commit()
-        print("Completions populated from CSV.")
-    else:
-        print("completions.csv not found, skipping completions population.")
-
-    # --- Terreni Population from CSV ---
-    # Tags must be from TerrenoCategoria enum: SPORT, CERIMONIA, NOTTURNO, BIVACCO
-    from app.models import TerrenoCategoria
-
-    if os.path.exists("terreni.csv"):
-        print("Reading terreni from terreni.csv...")
-        with open("terreni.csv", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                t_name = row["Name"]
+            for row_idx, row in enumerate(reader, start=2):
+                t_name = row["Name"].strip()
                 t_tags = row["Tags"].strip().upper()
-                t_center_lat = row["CenterLat"]
-                t_center_lon = row["CenterLon"]
-                t_polygon = row["Polygon"]
-                t_description = row.get("Description", "")
-                t_image_urls = row.get("ImageUrls", "[]")
+                t_center_lat = row["CenterLat"].strip()
+                t_center_lon = row["CenterLon"].strip()
+                t_polygon = row["Polygon"].strip()
+                t_description = row.get("Description", "").strip()
+                t_image_urls = row.get("ImageUrls", "[]").strip()
 
-                # Validate tags
+                if not t_name or not t_center_lat or not t_center_lon or not t_polygon:
+                    raise ValueError(f"terreni.csv row {row_idx}: Missing required fields.")
+
                 is_valid, invalid_tags = TerrenoCategoria.validate_tags(t_tags)
                 if not is_valid:
-                    print(
-                        f"Warning: Skipping terreno '{t_name}' - invalid tags: {invalid_tags}. "
-                        f"Valid tags are: {TerrenoCategoria.all_values()}"
-                    )
-                    continue
+                    raise ValueError(f"terreni.csv row {row_idx}: Invalid tags: {invalid_tags}.")
 
                 exists = db.query(Terreno).filter(Terreno.name == t_name).first()
                 if not exists:
@@ -162,26 +106,45 @@ def init_db():
                     db.add(new_terreno)
         db.commit()
         print("Terreni populated from CSV.")
-    else:
-        print("terreni.csv not found, skipping terreni population.")
 
-    # --- Prenotazioni Population from CSV (Legacy/Supplemental) ---
-    if os.path.exists("prenotazioni.csv"):
-        print("Reading reservations from prenotazioni.csv...")
-        with open("prenotazioni.csv", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                t_name = row["TerrenoName"]
-                u_name = row["UnitName"]
-                start_time_str = row["StartTime"]
-                duration = int(row["Duration"])
-                status = row["Status"]
+        # --- Prenotazioni Population ---
+        prenotazioni_file = os.path.join(seed_dir, "riservazioni_test.csv")
+        if os.path.exists(prenotazioni_file):
+            print(f"Reading reservations from {prenotazioni_file}...")
+            with open(prenotazioni_file, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                required_cols = {"TerrenoName", "UnitName", "StartTime", "Duration", "Status"}
+                if not required_cols.issubset(set(reader.fieldnames or [])):
+                    raise ValueError("riservazioni_test.csv is missing required columns.")
 
-                terreno = db.query(Terreno).filter(Terreno.name == t_name).first()
-                unita = db.query(Unita).filter(Unita.name == u_name).first()
+                for row_idx, row in enumerate(reader, start=2):
+                    t_name = row["TerrenoName"].strip()
+                    u_name = row["UnitName"].strip()
+                    start_time_str = row["StartTime"].strip()
+                    duration_str = row["Duration"].strip()
+                    status = row["Status"].strip()
 
-                if terreno and unita:
-                    start_time = datetime.fromisoformat(start_time_str)
+                    try:
+                        duration = int(duration_str)
+                    except ValueError:
+                        raise ValueError(
+                            f"riservazioni_test.csv row {row_idx}: Invalid Duration '{duration_str}'"
+                        ) from None
+
+                    terreno = db.query(Terreno).filter(Terreno.name == t_name).first()
+                    if not terreno:
+                        raise ValueError(f"riservazioni_test.csv row {row_idx}: Terreno '{t_name}' not found.")
+                    unita = db.query(Unita).filter(Unita.name == u_name).first()
+                    if not unita:
+                        raise ValueError(f"riservazioni_test.csv row {row_idx}: Unit '{u_name}' not found.")
+
+                    try:
+                        start_time = datetime.fromisoformat(start_time_str)
+                    except ValueError:
+                        raise ValueError(
+                            f"riservazioni_test.csv row {row_idx}: Invalid StartTime '{start_time_str}'"
+                        ) from None
+
                     end_time = start_time + timedelta(hours=duration)
 
                     new_prenotazione = Prenotazione(
@@ -193,86 +156,36 @@ def init_db():
                         status=status,
                     )
                     db.add(new_prenotazione)
-                else:
-                    print(f"Warning: Terreno '{t_name}' or Unit '{u_name}' not found.")
+            db.commit()
+            print("Reservations populated from CSV.")
+
+        # --- Users Population ---
+        if not db.query(User).filter(User.username == "admin").first():
+            admin_user = User(username="admin", password_hash=get_password_hash("admin"), role="admin")
+            db.add(admin_user)
+            print("Admin user created.")
+
+        if not db.query(User).filter(User.username == "prog").first():
+            tech_user = User(username="prog", password_hash=get_password_hash("esplo"), role="tech")
+            db.add(tech_user)
+            print("Tech user created.")
+
+        all_units = db.query(Unita).all()
+        for unit in all_units:
+            safe_username = "".join(c for c in unit.name if c.isalnum()).lower()
+            if not db.query(User).filter(User.username == safe_username).first():
+                unit_user = User(
+                    username=safe_username, password_hash=get_password_hash("scout"), role="unit", unita_id=unit.id
+                )
+                db.add(unit_user)
         db.commit()
-        print("Reservations populated from CSV.")
-    else:
-        print("prenotazioni.csv not found, skipping reservation population.")
 
-    # --- Users Population ---
-    # 1. Admin
-    if not db.query(User).filter(User.username == "admin").first():
-        admin_user = User(username="admin", password_hash=get_password_hash("admin"), role="admin")
-        db.add(admin_user)
-        print("Admin user created.")
+        # Export Admin DB UI to credentials.txt is no longer needed or we can do it silently
 
-    # 2. Tech (Superuser)
-    if not db.query(User).filter(User.username == "prog").first():
-        tech_user = User(username="prog", password_hash=get_password_hash("esplo"), role="tech")
-        db.add(tech_user)
-        print("Tech user created.")
-
-    # 3. Unit Users
-    # Create a user for each unit. Username = simplified name (lowercase, no spaces/special chars)
-    all_units = db.query(Unita).all()
-    for unit in all_units:
-        # Simple username generation
-        safe_username = "".join(c for c in unit.name if c.isalnum()).lower()
-
-        if not db.query(User).filter(User.username == safe_username).first():
-            unit_user = User(
-                username=safe_username, password_hash=get_password_hash("scout"), role="unit", unita_id=unit.id
-            )
-            db.add(unit_user)
-            print(f"User created for unit: {unit.name} ({safe_username})")
-
-    # --- Credentials Export ---
-    db.commit()  # Ensure all users are committed before querying
-    credentials = []
-    credentials.append("--- CREDENZIALI DI ACCESSO ---")
-    credentials.append("")
-    credentials.append("ADMIN (Accesso completo):")
-    credentials.append("Username: admin")
-    credentials.append("Password: admin")
-    credentials.append("")
-    credentials.append("TECNICO (Inserimento Punti + Gestione Terreni):")
-    credentials.append("Username: prog")
-    credentials.append("Password: esplo")
-    credentials.append("")
-    credentials.append("UNITA (Classifica + Prenotazioni):")
-
-    # Re-query to get all users including newly created ones
-    all_unit_users = db.query(User).filter(User.role == "unit").all()
-    for u in all_unit_users:
-        if u.unita:
-            # We know the default password is 'scout'
-            credentials.append(f"Unità: {u.unita.name}")
-            credentials.append(f"Username: {u.username}")
-            credentials.append("Password: scout")
-            credentials.append("-" * 20)
-
-    with open("credentials.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(credentials))
-
-    print("Credentials exported to credentials.txt")
-
-    db.commit()
-    db.close()
-
-    db.close()
+    finally:
+        if own_session:
+            db.close()
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Initialize the database.")
-    parser.add_argument("--reset", action="store_true", help="Drop all tables before initializing.")
-    args = parser.parse_args()
-
-    if args.reset:
-        print("Dropping all tables...")
-        Base.metadata.drop_all(bind=engine)
-        print("Tables dropped.")
-
-    init_db()
+    reset_and_init_db()
