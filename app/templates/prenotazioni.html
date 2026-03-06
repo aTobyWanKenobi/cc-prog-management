@@ -164,7 +164,7 @@
                                 @mouseenter="onDrag(day, step + 6)">
 
                                 <!-- Tooltip on Hover -->
-                                <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs p-1 rounded whitespace-nowrap z-50 mb-1"
+                                <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs p-1 rounded whitespace-pre-line text-center z-50 mb-1"
                                     x-text="getSlotTooltip(day, step + 6)">
                                 </div>
                             </div>
@@ -212,6 +212,11 @@
                             <option value="4" :selected="selectedDuration == 4">4 ore</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Note (Opzionale)</label>
+                        <textarea name="notes" rows="2" placeholder="Dettagli attività, numeri, richieste"
+                            class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500"></textarea>
+                    </div>
                 </div>
                 <div class="mt-6 flex flex-col space-y-3">
                     <p class="text-sm text-gray-500 text-center">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
@@ -244,6 +249,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durata</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
                 </thead>
@@ -268,6 +274,16 @@
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫 Annullata</span>
                             {% else %}
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{ res.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if user.role == 'unit' and res.unita_id == user.unita_id %}
+                                <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                    <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Aggiungi una nota..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                    <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                                </form>
+                            {% else %}
+                                {{ res.notes or '-' }}
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -584,7 +600,7 @@
                     return (rStart < slotEnd && rEnd > slotStart);
                 });
 
-                return res ? `Prenotato da: ${res.unit_name}` : '';
+                return res ? (res.notes ? `Prenotato da: ${res.unit_name}\nNote: ${res.notes}` : `Prenotato da: ${res.unit_name}`) : '';
             }
         }
     }

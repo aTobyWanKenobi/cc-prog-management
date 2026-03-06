@@ -19,6 +19,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inizio</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fine</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Azioni</th>
                     </tr>
                 </thead>
@@ -30,6 +31,12 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Note..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                            </form>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
                                 <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-md mr-1 transition-colors">
@@ -45,7 +52,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">
                             Nessuna prenotazione in attesa di approvazione.
                         </td>
                     </tr>
@@ -69,6 +76,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inizio</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fine</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -79,10 +87,16 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Note..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-400">
+                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
                             Nessuna prenotazione approvata.
                         </td>
                     </tr>

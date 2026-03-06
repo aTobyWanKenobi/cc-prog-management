@@ -130,6 +130,7 @@ async def create_prenotazione(
     start_date: str = Form(...),
     start_hour: int = Form(...),
     duration: int = Form(...),
+    notes: str | None = Form(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
@@ -173,6 +174,7 @@ async def create_prenotazione(
         start_time=start_time,
         end_time=end_time,
         duration=duration,
+        notes=notes,
         status="PENDING",
     )
     db.add(new_prenotazione)
@@ -191,6 +193,26 @@ async def create_prenotazione(
         )
 
     return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni/update-notes/{prenotazione_id}")
+async def update_prenotazione_notes(
+    prenotazione_id: int,
+    notes: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Only owner or admin/tech can edit notes
+    if user.role == "unit" and prenotazione.unita_id != user.unita_id:
+        raise HTTPException(status_code=403, detail="Non sei autorizzato a modificare queste note.")
+
+    prenotazione.notes = notes
+    db.commit()
+    return RedirectResponse(url="/prenotazioni?success=notes_updated", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/input", response_class=HTMLResponse)
@@ -352,7 +374,12 @@ async def timeline_page(request: Request, db: Session = Depends(get_db), user: U
 
 # --- API ---
 @router.get("/api/terreni/availability")
-async def get_terreni_availability(start_date: datetime, end_date: datetime, db: Session = Depends(get_db)):
+async def get_terreni_availability(
+    start_date: datetime,
+    end_date: datetime,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
     """
     Returns list of terrains with their availability status for the given range.
     Status: FREE, PARTIAL, BOOKED
@@ -423,7 +450,13 @@ async def get_terreni_availability(start_date: datetime, end_date: datetime, db:
                 "image_urls": t.image_urls,
                 "status": status,
                 "reservations": [
-                    {"start": r.start_time.isoformat(), "end": r.end_time.isoformat(), "unit_name": r.unita.name}
+                    {
+                        "id": r.id,
+                        "start": r.start_time.isoformat(),
+                        "end": r.end_time.isoformat(),
+                        "unit_name": r.unita.name,
+                        "notes": r.notes if (user.role in ["admin", "tech"] or user.unita_id == r.unita_id) else "",
+                    }
                     for r in reservations
                 ],
             }
