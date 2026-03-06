@@ -16,32 +16,41 @@ def live_server():
     # Create mock seed files
     with tempfile.TemporaryDirectory() as tmp_seed_dir:
         os.environ["SEED_DIR"] = tmp_seed_dir
-        
+
         # Mock unita.csv
         with open(os.path.join(tmp_seed_dir, "unita.csv"), "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["UnitName", "Tipo", "Sottocampo", "Email"])
             writer.writeheader()
-            writer.writerow({"UnitName": "Faido", "Tipo": "Reparto", "Sottocampo": "TestCampo", "Email": "test@example.com"})
-            writer.writerow({"UnitName": "AdminUnit", "Tipo": "Staff", "Sottocampo": "HQ", "Email": "admin@example.com"})
+            writer.writerow(
+                {"UnitName": "Faido", "Tipo": "Reparto", "Sottocampo": "TestCampo", "Email": "test@example.com"}
+            )
+            writer.writerow(
+                {"UnitName": "AdminUnit", "Tipo": "Staff", "Sottocampo": "HQ", "Email": "admin@example.com"}
+            )
 
         # Mock terreni.csv
         with open(os.path.join(tmp_seed_dir, "terreni.csv"), "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["Name", "Tags", "CenterLat", "CenterLon", "Polygon", "Description", "ImageUrls"])
+            writer = csv.DictWriter(
+                f, fieldnames=["Name", "Tags", "CenterLat", "CenterLon", "Polygon", "Description", "ImageUrls"]
+            )
             writer.writeheader()
-            writer.writerow({
-                "Name": "TestTerrain", 
-                "Tags": "BIVACCO,SPORT", 
-                "CenterLat": "46.0", 
-                "CenterLon": "9.0", 
-                "Polygon": "[[46.0, 9.0], [46.1, 9.0], [46.1, 9.1], [46.0, 9.1]]",
-                "Description": "Test description",
-                "ImageUrls": "[]"
-            })
+            writer.writerow(
+                {
+                    "Name": "TestTerrain",
+                    "Tags": "BIVACCO,SPORT",
+                    "CenterLat": "46.0",
+                    "CenterLon": "9.0",
+                    "Polygon": "[[46.0, 9.0], [46.1, 9.0], [46.1, 9.1], [46.0, 9.1]]",
+                    "Description": "Test description",
+                    "ImageUrls": "[]",
+                }
+            )
 
         # Run init_db to seed the test DB
         import sys
+
         python_exe = sys.executable
-        
+
         result = subprocess.run([python_exe, "init_db.py"], capture_output=True, text=True)
         if result.returncode != 0:
             print("init_db.py failed!")
