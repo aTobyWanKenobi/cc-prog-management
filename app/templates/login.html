@@ -79,8 +79,8 @@
                     'border-blue-200 text-blue-800': role === 'staff',
                     'border-red-200 text-red-800': role === 'direzione'
                 }">
-                <p x-show="role === 'reparto'"><strong>Reparto Esploratori:</strong> Usa lo username assegnato al tuo reparto.</p>
-                <p x-show="role === 'posto'" x-cloak><strong>Posto Pionieri:</strong> Usa lo username assegnato al tuo posto.</p>
+                <p x-show="role === 'reparto'"><strong>Reparto Esploratori:</strong> Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo reparto.</p>
+                <p x-show="role === 'posto'" x-cloak><strong>Posto Pionieri:</strong> Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo posto.</p>
                 <p x-show="role === 'staff'" x-cloak><strong>Membri Staff:</strong> Usa le credenziali fornite (es. <em>prog</em>).</p>
                 <p x-show="role === 'direzione'" x-cloak><strong>Direzione Campo:</strong> Accesso amministrativo completo.</p>
             </div>
