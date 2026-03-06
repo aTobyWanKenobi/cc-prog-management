@@ -171,56 +171,70 @@
         </div>
     </div>
 
-    <!-- User Reservations List -->
-    {% if user.role == 'unit' %}
+    <!-- Reservations Dashboard -->
     <div class="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="bg-scout-50 px-6 py-4 border-b border-gray-200">
-            <h3 class="font-bold text-scout-800">Le Tue Prenotazioni</h3>
+            <h3 class="font-bold text-scout-800">
+                {% if user.role == 'unit' %}Le Tue Prenotazioni{% else %}Tutte le Prenotazioni{% endif %}
+            </h3>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Terreno</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Inizio</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Durata</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato
-                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terreno</th>
+                        {% if user.role in ['tech', 'admin'] %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unità</th>
+                        {% endif %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inizio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for res in user_reservations %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m
-                            %H:%M') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m
-                            %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}</td>
+                        {% if user.role in ['tech', 'admin'] %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ res.unita.name }}</td>
+                        {% endif %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {{ res.status }}
-                            </span>
+                            {% if res.status == 'APPROVED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅ Approvata</span>
+                            {% elif res.status == 'PENDING' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ In Attesa</span>
+                            {% elif res.status == 'REJECTED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">❌ Rifiutata</span>
+                            {% elif res.status == 'CANCELLED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫 Annullata</span>
+                            {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{ res.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if res.status == 'PENDING' %}
+                            <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors" onclick="return confirm('Annullare questa prenotazione?')">
+                                    Annulla
+                                </button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Nessuna prenotazione
-                            trovata.</td>
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">Nessuna prenotazione trovata.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-    {% endif %}
 
     <!-- Booking Request Form (Units Only) -->
     {% if user.role == 'unit' %}

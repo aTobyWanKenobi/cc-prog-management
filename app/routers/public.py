@@ -83,10 +83,38 @@ async def prenotazioni_page(
             .order_by(Prenotazione.start_time)
             .all()
         )
+    elif user.role in ["tech", "admin"]:
+        # Tech/admin see all reservations
+        user_reservations = (
+            db.query(Prenotazione)
+            .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+            .order_by(Prenotazione.start_time)
+            .all()
+        )
 
     return templates.TemplateResponse(
         "prenotazioni.html", {"request": request, "user": user, "user_reservations": user_reservations}
     )
+
+
+@router.post("/prenotazioni/cancel/{prenotazione_id}")
+async def cancel_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Units can only cancel their own PENDING reservations
+    if user.role == "unit":
+        if prenotazione.unita_id != user.unita_id or prenotazione.status != "PENDING":
+            raise HTTPException(status_code=403, detail="Non puoi annullare questa prenotazione")
+
+    prenotazione.status = "CANCELLED"
+    db.commit()
+    return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/prenotazioni")
