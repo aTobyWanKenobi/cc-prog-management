@@ -13,6 +13,7 @@ from app.email_service import (
     send_reservation_approved_email,
     send_reservation_rejected_email,
     send_reservation_requested_email,
+    send_support_email,
 )
 from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
@@ -534,3 +535,29 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
     response = StreamingResponse(io.BytesIO(csv_data.encode("utf-8")), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=classifica_scout.csv"
     return response
+
+
+@router.get("/supporto", response_class=HTMLResponse)
+async def supporto_page(request: Request, user: User = Depends(get_authenticated_user)):
+    """Render the support contact form."""
+    return templates.TemplateResponse(request, "support.html", {"user": user})
+
+
+@router.post("/supporto", response_class=HTMLResponse)
+async def post_supporto(
+    request: Request,
+    subject: str = Form(...),
+    message: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    """Handle support form submission."""
+    try:
+        user_name = user.unita.name if user.unita else user.username
+        role = user.role
+        email = user.email if user.email else (user.unita.email if hasattr(user, "unita") and user.unita else None)
+        send_support_email(user_email=email, user_name=user_name, subject=subject, message=message, role=role)
+        return templates.TemplateResponse(request, "support.html", {"user": user, "success": True})
+    except Exception as e:
+        return templates.TemplateResponse(
+            request, "support.html", {"user": user, "error": f"Errore durante l'invio: {str(e)}"}
+        )

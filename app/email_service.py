@@ -115,3 +115,24 @@ Puoi riprovare con un altro orario o un altro terreno. Per domande, contatta lo 
 
 Buon campo! ⛺""",
     )
+
+
+def send_support_email(user_email: str | None, user_name: str, subject: str, message: str, role: str):
+    """Send a support request email to the admin team."""
+    admin_email = "tech@bestiale2026.ch"
+    user_contact = user_email if user_email else "Nessuna email fornita"
+
+    _print_email(
+        to=admin_email,
+        subject=f"[SUPPORTO] {subject} - {user_name}",
+        body=f"""Nuova richiesta di supporto dall'applicazione BeSTiapp.
+
+UTENTE: {user_name} (Ruolo: {role})
+EMAIL DI CONTATTO: {user_contact}
+
+OGGETTO: {subject}
+
+MESSAGGIO:
+{message}
+""",
+    )
