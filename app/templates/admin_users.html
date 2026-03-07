@@ -33,13 +33,13 @@
     </div>
 
     <!-- Users List -->
-    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg table-responsive">
+        <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
             <thead class="bg-scout-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">
                         Username</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Email
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider hide-on-mobile">Email
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Ruolo
                     </th>
@@ -53,7 +53,7 @@
                 {% for u in users %}
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ u.username }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ u.email or '-' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hide-on-mobile">{{ u.email or '-' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span
                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full

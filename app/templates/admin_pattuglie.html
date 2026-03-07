@@ -56,13 +56,13 @@
     </div>
 
     <!-- Pattuglie List -->
-    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto"
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg table-responsive"
         x-data="{ search: '' }">
         <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <input type="text" x-model="search" placeholder="Cerca pattuglia..."
                 class="shadow-sm focus:ring-scout-500 focus:border-scout-500 block w-full sm:text-sm border-gray-300 rounded-md p-2">
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
             <thead class="bg-scout-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome

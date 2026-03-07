@@ -27,6 +27,58 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
+
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .table-responsive th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f9fafb;
+        }
+
+        table.sticky-col-1 th:first-child,
+        table.sticky-col-1 td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+            background-color: #ffffff;
+        }
+
+        table.sticky-col-1 th:first-child {
+            z-index: 12;
+            background-color: #f9fafb;
+        }
+
+        @media (max-width: 768px) {
+            .hide-on-mobile {
+                display: none !important;
+            }
+        }
     </style>
     <script>
         tailwind.config = {
