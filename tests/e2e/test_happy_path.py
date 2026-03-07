@@ -1,4 +1,6 @@
+import os
 import sqlite3
+import time
 
 from playwright.sync_api import Page, expect
 
@@ -61,19 +63,42 @@ def test_password_reset(page: Page, live_server: str):
 
     expect(page.locator("text=Setup o Recupero")).to_be_visible()
 
-    page.fill('input[name="email"]', "admin@bestiale2026.ch")
+    email = "admin@bestiale2026.ch"
+    page.fill('input[name="email"]', email)
     page.click('button[type="submit"]')
 
     expect(page.locator("text=Se l'email esiste")).to_be_visible()
 
-    # Extract token from DB
-    conn = sqlite3.connect("test_uat.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT reset_token FROM users WHERE email='admin@bestiale2026.ch'")
-    token = cursor.fetchone()[0]
-    conn.close()
+    # Extract token from DB using the same URL as the server
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///./test_uat.db")
+    db_path = db_url.replace("sqlite:///", "")
+    if db_path.startswith("./"):
+        db_path = db_path[2:]
 
-    assert token is not None
+    time.sleep(2)  # Wait for commit
+
+    token = None
+    # Try multiple times to handle any SQLite locking or delay
+    for _ in range(5):
+        if not os.path.exists(db_path):
+            time.sleep(1)
+            continue
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT reset_token FROM users WHERE email=?", (email,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                token = row[0]
+                break
+        except sqlite3.OperationalError:
+            pass
+        finally:
+            conn.close()
+        time.sleep(1)
+
+    assert token is not None, f"Token not found for {email} in {db_path} (URL: {db_url})"
 
     # Visit reset link
     page.goto(f"{live_server}/reset-password?token={token}")

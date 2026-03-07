@@ -11,7 +11,17 @@ import requests
 
 @pytest.fixture(scope="session", autouse=True)
 def live_server():
-    os.environ["DATABASE_URL"] = "sqlite:///./test_uat.db"
+    # Use a fresh, unique DB name and port to avoid ANY conflicts
+    db_path = os.path.abspath(os.path.join("tests", "data", "e2e_test.db")).replace("\\", "/")
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+    # Delete if exists from previous crashed runs
+    if os.path.exists(db_path):
+        with contextlib.suppress(OSError):
+            os.remove(db_path)
 
     # Create mock seed files
     with tempfile.TemporaryDirectory() as tmp_seed_dir:
@@ -50,38 +60,40 @@ def live_server():
         import sys
 
         python_exe = sys.executable
-
-        result = subprocess.run([python_exe, "init_db.py"], capture_output=True, text=True)
+        result = subprocess.run([python_exe, "init_db.py"], capture_output=True, text=True, env=os.environ)
         if result.returncode != 0:
             print("init_db.py failed!")
             print(f"STDOUT: {result.stdout}")
             print(f"STDERR: {result.stderr}")
             result.check_returncode()
 
-    # Start server
-    proc = subprocess.Popen([python_exe, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"])
+    # Start server on 8002
+    proc = subprocess.Popen(
+        [python_exe, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8002"],
+        env=os.environ,
+    )
 
     # Wait for ready
-    url = "http://127.0.0.1:8000/login"
+    url = "http://127.0.0.1:8002/login"
     start_time = time.time()
-    while time.time() - start_time < 10:
+    while time.time() - start_time < 15:
         try:
             res = requests.get(url)
             if res.status_code == 200:
                 break
         except requests.ConnectionError:
             pass
-        time.sleep(0.5)
+        time.sleep(1)
     else:
         proc.kill()
-        raise RuntimeError("Server did not start in time")
+        raise RuntimeError("Server did not start in time on port 8002")
 
-    yield "http://127.0.0.1:8000"
+    yield "http://127.0.0.1:8002"
 
     proc.kill()
     proc.wait()
 
     # Cleanup DB
-    if os.path.exists("test_uat.db"):
+    if os.path.exists(db_path):
         with contextlib.suppress(OSError):
-            os.remove("test_uat.db")
+            os.remove(db_path)
