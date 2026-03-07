@@ -519,6 +519,7 @@ async def get_terreni_availability(
                         "id": r.id,
                         "start": r.start_time.isoformat(),
                         "end": r.end_time.isoformat(),
+                        "status": r.status,
                         "unit_name": r.unita.name,
                         "notes": r.notes if (user.role in ["admin", "tech"] or user.unita_id == r.unita_id) else "",
                     }
