@@ -18,12 +18,54 @@
         transition: all 0.2s;
     }
 
-    .calendar-cell:hover {
-        opacity: 0.8;
-    }
-
     .slot-selected {
         box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+    }
+
+    /* Custom Sliders */
+    input[type=range].slider-large {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        background: transparent;
+    }
+
+    input[type=range].slider-large::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #0284c7; /* scout-600 */
+        cursor: pointer;
+        margin-top: -8px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input[type=range].slider-large::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: #e5e7eb;
+        border-radius: 4px;
+    }
+
+    input[type=range].slider-large::-moz-range-thumb {
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #0284c7;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        border: none;
+    }
+
+    input[type=range].slider-large::-moz-range-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: #e5e7eb;
+        border-radius: 4px;
     }
 </style>
 {% endblock %}
@@ -41,14 +83,14 @@
                 <input type="date" x-model="filterDate" @change="fetchAvailability()"
                     class="border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
             </div>
-            <div class="w-32">
+            <div class="w-48">
                 <label class="block text-xs font-bold text-gray-400 uppercase">Orario: <span
-                        x-text="filterStartHour"></span>:00 - <span x-text="filterEndHour"></span>:00</label>
-                <div class="flex items-center space-x-2">
-                    <input type="range" min="0" max="23" x-model.number="filterStartHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full accent-scout-600">
-                    <input type="range" min="0" max="24" x-model.number="filterEndHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full accent-scout-600">
+                        x-text="formatHour(filterStartHour)"></span> - <span x-text="formatHour(filterEndHour)"></span></label>
+                <div class="flex items-center space-x-4 mt-2">
+                    <input type="range" min="7" max="24" step="1" x-model.number="filterStartHour"
+                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
+                    <input type="range" min="8" max="25" step="1" x-model.number="filterEndHour"
+                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
                 </div>
             </div>
         </div>
@@ -342,8 +384,8 @@
             map: null,
             terrainLayers: {},
             filterDate: '2026-07-25',
-            filterStartHour: 14,
-            filterEndHour: 18,
+            filterStartHour: 7,
+            filterEndHour: 25,
             currentImageIndex: 0,
             selectedTerrain: null,
             terrainsData: [],
@@ -504,6 +546,13 @@
 
             formatDay(date) {
                 return date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0');
+            },
+
+            formatHour(h) {
+                if (h >= 24) {
+                    return ('0' + (h - 24)).slice(-2) + ':00';
+                }
+                return ('0' + h).slice(-2) + ':00';
             },
 
             getSlotClass(day, hour) {

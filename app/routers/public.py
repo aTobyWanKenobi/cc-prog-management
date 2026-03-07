@@ -155,11 +155,8 @@ async def create_prenotazione(
         raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
 
     try:
-        if start_hour == 24:
-            base_date = datetime.strptime(start_date, "%Y-%m-%d")
-            start_time = base_date + timedelta(days=1)
-        else:
-            start_time = datetime.strptime(f"{start_date} {start_hour:02d}:00", "%Y-%m-%d %H:00")
+        base_date = datetime.strptime(start_date, "%Y-%m-%d")
+        start_time = base_date + timedelta(hours=start_hour)
     except ValueError:
         raise HTTPException(status_code=400, detail="Data o ora non valida.") from None
 
