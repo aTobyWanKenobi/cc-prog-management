@@ -235,9 +235,80 @@ async def delete_challenge(challenge_id: int, db: Session = Depends(get_db)):
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     users = db.query(User).options(joinedload(User.unita)).all()
+    unita = db.query(Unita).all()
     return templates.TemplateResponse(
-        request, "admin_users.html", {"users": users, "user": user, "active_tab": "users"}
+        request, "admin_users.html", {"users": users, "unita": unita, "user": user, "active_tab": "users"}
     )
+
+
+@router.post("/users")
+async def create_user(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(""),
+    role: str = Form(...),
+    unita_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    import secrets
+    import string
+
+    from app.auth import pwd_context
+
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    random_password = "".join(secrets.choice(alphabet) for i in range(12))
+    hashed_pw = pwd_context.hash(random_password)
+
+    new_user = User(
+        username=username, email=email, role=role, unita_id=unita_id if unita_id else None, password_hash=hashed_pw
+    )
+    db.add(new_user)
+    db.commit()
+
+    users = db.query(User).options(joinedload(User.unita)).all()
+    unita_list = db.query(Unita).all()
+
+    return templates.TemplateResponse(
+        request,
+        "admin_users.html",
+        {
+            "users": users,
+            "unita": unita_list,
+            "user": user,
+            "active_tab": "users",
+            "new_user_password": random_password,
+            "new_username": username,
+        },
+    )
+
+
+@router.post("/users/{user_id}/edit")
+async def edit_user(
+    user_id: int,
+    username: str = Form(...),
+    email: str = Form(""),
+    role: str = Form(...),
+    unita_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    user_to_edit = db.query(User).filter(User.id == user_id).first()
+    if user_to_edit:
+        user_to_edit.username = username
+        user_to_edit.email = email
+        user_to_edit.role = role
+        user_to_edit.unita_id = unita_id if unita_id else None
+        db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/users/{user_id}/delete")
+async def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+    if user_to_delete:
+        db.delete(user_to_delete)
+        db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/users/{user_id}/password")
