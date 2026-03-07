@@ -389,8 +389,10 @@ async def rollback_completion(completion_id: int, request: Request, db: Session 
     if completion:
         # Deduct points
         pattuglia = completion.pattuglia
-        challenge = completion.challenge
-        pattuglia.current_score -= challenge.points
+        if completion.is_manual:
+            pattuglia.current_score -= completion.manual_points or 0
+        elif completion.challenge:
+            pattuglia.current_score -= completion.challenge.points
 
         db.delete(completion)
         db.commit()

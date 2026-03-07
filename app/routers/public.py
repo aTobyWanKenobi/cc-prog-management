@@ -365,6 +365,32 @@ async def register_completion(
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
+@router.post("/manual-adjustment")
+async def register_manual_adjustment(
+    pattuglia_id: int = Form(...),
+    manual_points: int = Form(...),
+    manual_note: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_tech_user),
+):
+    pattuglia = db.query(Pattuglia).filter(Pattuglia.id == pattuglia_id).first()
+    if not pattuglia:
+        return RedirectResponse(url="/input?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+
+    new_completion = Completion(
+        pattuglia_id=pattuglia_id,
+        is_manual=True,
+        manual_points=manual_points,
+        manual_note=manual_note,
+    )
+    db.add(new_completion)
+
+    pattuglia.current_score += manual_points
+    db.commit()
+
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/timeline", response_class=HTMLResponse)
 async def timeline_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)):
     if user.role == "unit" and user.unita and user.unita.tipo == "Posto":

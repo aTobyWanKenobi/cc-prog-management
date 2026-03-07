@@ -81,11 +81,14 @@ class Completion(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     pattuglia_id: Mapped[int] = mapped_column(ForeignKey("pattuglie.id"))
-    challenge_id: Mapped[int] = mapped_column(ForeignKey("challenges.id"))
+    challenge_id: Mapped[int | None] = mapped_column(ForeignKey("challenges.id"), nullable=True)
+    is_manual: Mapped[bool] = mapped_column(default=False)
+    manual_points: Mapped[int | None] = mapped_column(nullable=True)
+    manual_note: Mapped[str | None] = mapped_column(nullable=True)
     timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     pattuglia: Mapped["Pattuglia"] = relationship(back_populates="completions")
-    challenge: Mapped["Challenge"] = relationship(back_populates="completions")
+    challenge: Mapped[Optional["Challenge"]] = relationship(back_populates="completions")
 
 
 class User(Base):
