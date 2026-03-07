@@ -63,6 +63,51 @@ def test_terreno_crud(client, session):
     assert session.query(Terreno).filter(Terreno.id == t.id).first() is None
 
 
+def test_gestione_terreni_filtering_staff(client, session):
+    from app.models import Unita, User
+
+    MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU"
+    tech = User(username="tech", password_hash=MOCK_HASH, role="tech")
+    session.add(tech)
+
+    # Setup Unita
+    u1 = Unita(name="Reparto Test", tipo="reparto")
+    session.add(u1)
+    session.commit()
+
+    # Setup Terreni
+    t1 = Terreno(name="t1", tags="", center_lat="0", center_lon="0", polygon="[]")
+    t2 = Terreno(name="t2", tags="", center_lat="0", center_lon="0", polygon="[]")
+    session.add(t1)
+    session.add(t2)
+    session.commit()
+
+    # Setup reservations
+    r1 = Prenotazione(
+        unita_id=u1.id, terreno_id=t1.id, start_time=datetime.now(), end_time=datetime.now(), status="PENDING"
+    )
+    r2 = Prenotazione(
+        unita_id=u1.id, terreno_id=t2.id, start_time=datetime.now(), end_time=datetime.now(), status="APPROVED"
+    )
+    session.add(r1)
+    session.add(r2)
+    session.commit()
+
+    # Login as tech
+    client.post("/login", data={"username": "tech", "password": "god", "login_role": "staff"})
+
+    # Get all terrains
+    response = client.get("/gestione-terreni")
+    assert response.status_code == 200
+    # Both active should be found conceptually
+    assert "t1" in response.text
+    assert "t2" in response.text
+
+    # Filter by t1
+    response_filtered = client.get(f"/gestione-terreni?terreno_id={t1.id}")
+    assert response_filtered.status_code == 200
+
+
 def test_reservation_visibility(client, session):
     # Setup data
     setup_admin(session)
