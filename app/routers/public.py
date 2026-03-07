@@ -234,26 +234,36 @@ async def input_page(request: Request, db: Session = Depends(get_db), user: User
 
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
-async def gestione_terreni_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
-    pending = (
+async def gestione_terreni(
+    request: Request, terreno_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_tech_user)
+):
+    pending_query = (
         db.query(Prenotazione)
         .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
         .filter(Prenotazione.status == "PENDING")
-        .order_by(Prenotazione.start_time)
-        .all()
     )
-    approved = (
+
+    approved_query = (
         db.query(Prenotazione)
         .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
         .filter(Prenotazione.status == "APPROVED")
-        .order_by(Prenotazione.start_time.desc())
-        .limit(20)
-        .all()
     )
+
+    if terreno_id:
+        pending = pending_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time).all()
+        approved = (
+            approved_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time.desc()).all()
+        )
+    else:
+        pending = pending_query.order_by(Prenotazione.start_time).all()
+        approved = approved_query.order_by(Prenotazione.start_time.desc()).limit(20).all()
+
+    terreni = db.query(Terreno).order_by(Terreno.name).all()
+
     return templates.TemplateResponse(
         request,
         "gestione_terreni.html",
-        {"user": user, "pending": pending, "approved": approved},
+        {"user": user, "pending": pending, "approved": approved, "terreni": terreni, "selected_terreno_id": terreno_id},
     )
 
 
