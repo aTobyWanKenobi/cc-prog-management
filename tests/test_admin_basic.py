@@ -15,21 +15,21 @@ def create_admin_user(session):
 
 def auth_header(client):
     # Logs in as admin and returns headers/cookies logic handled by client session
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
 
 def test_admin_dashboard_access(client, session):
     create_admin_user(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     response = client.get("/admin/")
     assert response.status_code == 200
-    assert "Dashboard" in response.text
+    assert "Pannello" in response.text
 
 
 def test_manage_users(client, session):
     create_admin_user(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     # Users list
     response = client.get("/admin/users")
@@ -51,7 +51,7 @@ def test_manage_users(client, session):
 
 def test_challenge_crud(client, session):
     create_admin_user(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     # Create
     response = client.post(
@@ -97,7 +97,7 @@ def test_challenge_crud(client, session):
 
 def test_admin_get_pages(client, session):
     create_admin_user(session)
-    client.post("/login", data={"username": "admin", "password": "admin"})
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
 
     assert client.get("/admin/pattuglie").status_code == 200
     assert client.get("/admin/challenges").status_code == 200

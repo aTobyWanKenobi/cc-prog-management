@@ -1,9 +1,269 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-    <h1 class="text-4xl font-extrabold text-scout-800 mb-4">Gestione Terreni 🚜</h1>
-    <p class="text-xl text-gray-600">Area riservata alla logistica.</p>
-    <div class="mt-8 text-6xl">🚧</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-extrabold text-scout-800 mb-6">Gestione Prenotazioni Terreni 🚜</h1>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+        <form action="/gestione-terreni" method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="flex-1">
+                <label class="block text-sm font-bold text-gray-700 mb-1">Seleziona Terreno (Filtro)</label>
+                <select name="terreno_id" onchange="this.form.submit()" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2">
+                    <option value="">Tutti i Terreni</option>
+                    {% for t in terreni %}
+                    <option value="{{ t.id }}" {% if selected_terreno_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_terreno_id %}
+            <a href="/gestione-terreni" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 flex-none text-center inline-flex items-center justify-center">
+                Rimuovi Filtro
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Calendar View (Only if terrain is selected) -->
+    {% if selected_terreno_id %}
+    <div x-data="staffCalendar()" x-init="init({{ selected_terreno_id }})" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+        <div class="bg-scout-50 px-6 py-4 border-b border-gray-200">
+            <h3 class="font-bold text-scout-800">
+                Calendario Occupazione (25 Lug - 08 Ago)
+            </h3>
+        </div>
+        <div class="p-4 overflow-x-auto">
+            <div class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px]">
+                <!-- Header Row (Days) -->
+                <div class="bg-gray-50 p-1 sticky left-0 z-20"></div>
+                <template x-for="(day, index) in calendarDays" :key="index">
+                    <div class="bg-gray-50 p-1 text-center font-bold text-gray-500" x-text="formatDay(day)"></div>
+                </template>
+
+                <!-- Rows (Hours) -->
+                <template x-for="step in 18" :key="step">
+                    <contents class="contents">
+                        <div class="bg-gray-50 p-1 text-right text-gray-400 sticky left-0 z-10" x-text="((step + 6) % 24) + ':00'"></div>
+                        <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
+                            <div class="bg-white h-6 relative group border-white/50 border transition-colors"
+                                :class="getSlotClass(day, step + 6)">
+                                <div class="absolute inset-0 overflow-hidden flex items-center px-1 pointer-events-none" x-show="getSlotText(day, step + 6)">
+                                    <span class="text-[9px] font-bold text-white whitespace-nowrap truncate leading-none drop-shadow-md" x-text="getSlotText(day, step + 6)"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </contents>
+                </template>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Reservations -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+        <div class="bg-yellow-50 px-6 py-4 border-b border-yellow-200 flex items-center justify-between">
+            <h3 class="font-bold text-yellow-800">⏳ Prenotazioni in Attesa</h3>
+            <span class="bg-yellow-200 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full">{{ pending|length }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unità</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terreno</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inizio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fine</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for res in pending %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.unita.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ res.terreno.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Note..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                            </form>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-md mr-1 transition-colors">
+                                    ✅ Approva
+                                </button>
+                            </form>
+                            <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-md transition-colors">
+                                    ❌ Rifiuta
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">
+                            Nessuna prenotazione in attesa di approvazione.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recently Approved -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-green-50 px-6 py-4 border-b border-green-200">
+            <h3 class="font-bold text-green-800">✅ Prenotazioni Approvate (ultime 20)</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unità</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terreno</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inizio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fine</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for res in approved %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.unita.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ res.terreno.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Note..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
+                            Nessuna prenotazione approvata.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+    function staffCalendar() {
+        return {
+            selectedTerrainId: null,
+            terrainData: null,
+            calendarDays: [],
+
+            init(terrenoId) {
+                this.selectedTerrainId = terrenoId;
+                this.generateCalendarDays();
+                this.fetchAvailability();
+            },
+
+            generateCalendarDays() {
+                this.calendarDays = [];
+                let start = new Date('2026-07-25');
+                for (let i = 0; i < 15; i++) {
+                    let d = new Date(start);
+                    d.setDate(start.getDate() + i);
+                    this.calendarDays.push(d);
+                }
+            },
+
+            async fetchAvailability() {
+                let queryStart = new Date('2026-07-25T00:00:00');
+                let queryEnd = new Date('2026-08-08T23:59:59');
+
+                try {
+                    const params = new URLSearchParams({
+                        start_date: queryStart.toISOString(),
+                        end_date: queryEnd.toISOString()
+                    });
+
+                    const response = await fetch(`/api/terreni/availability?${params}`);
+                    const data = await response.json();
+
+                    this.terrainData = data.find(t => t.id === this.selectedTerrainId);
+                } catch (e) {
+                    console.error("Failed to fetch availability", e);
+                }
+            },
+
+            formatDay(date) {
+                return date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0');
+            },
+
+            getSlotClass(day, hour) {
+                if (!this.terrainData) return 'bg-white';
+
+                let isApproved = this.isSlotApproved(day, hour);
+                if (isApproved) return 'bg-rose-500 border-rose-600 opacity-90';
+
+                let isPending = this.isSlotPending(day, hour);
+                if (isPending) return 'bg-amber-400 border-amber-500 opacity-90';
+
+                return 'hover:bg-scout-50 cursor-default';
+            },
+
+            getSlotText(day, hour) {
+                if (!this.terrainData) return '';
+
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                let overlapping = this.terrainData.reservations.find(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (rStart < slotEnd && rEnd > slotStart);
+                });
+
+                if (overlapping) {
+                    let rStartHour = new Date(overlapping.start).getHours();
+                    let rStartDay = new Date(overlapping.start).getDate();
+                    if ((day.getDate() === rStartDay && hour === rStartHour) || hour === 7) {
+                        return overlapping.unita_name;
+                    }
+                }
+                return '';
+            },
+
+            isSlotApproved(day, hour) {
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                return this.terrainData.reservations.some(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (r.status === 'APPROVED' && rStart < slotEnd && rEnd > slotStart);
+                });
+            },
+
+            isSlotPending(day, hour) {
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                return this.terrainData.reservations.some(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (r.status === 'PENDING' && rStart < slotEnd && rEnd > slotStart);
+                });
+            }
+        }
+    }
+</script>
 {% endblock %}

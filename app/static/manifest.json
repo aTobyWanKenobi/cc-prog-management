@@ -1,0 +1,16 @@
+{
+    "name": "BeSTiapp",
+    "short_name": "BeSTiapp",
+    "description": "Sistema di Gestione Campo Scout Cantonale",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1e40af",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛺</text></svg>",
+            "type": "image/svg+xml",
+            "sizes": "512x512"
+        }
+    ]
+}

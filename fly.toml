@@ -1,4 +1,4 @@
-app = "punteggiometro"
+app = "bestiapp"
 primary_region = "fra"
 
 [build]

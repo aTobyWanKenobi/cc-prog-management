@@ -34,9 +34,21 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), user:
 
     unita = db.query(Unita).all()
     return templates.TemplateResponse(
+        request,
         "admin_dashboard.html",
-        {"request": request, "completions": completions, "unita": unita, "user": user, "active_tab": "dashboard"},
+        {"completions": completions, "unita": unita, "user": user, "active_tab": "dashboard"},
     )
+
+
+@router.post("/reset-db")
+async def reset_database(request: Request, user: User = Depends(get_admin_user)):
+    import init_db
+
+    try:
+        init_db.reset_and_init_db()
+    except Exception as e:
+        print(f"Error checking DB reset: {e}")
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # --- Pattuglie Management ---
@@ -45,8 +57,9 @@ async def admin_pattuglie(request: Request, db: Session = Depends(get_db), user:
     pattuglie = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).all()
     unita = db.query(Unita).all()
     return templates.TemplateResponse(
+        request,
         "admin_pattuglie.html",
-        {"request": request, "pattuglie": pattuglie, "unita": unita, "user": user, "active_tab": "pattuglie"},
+        {"pattuglie": pattuglie, "unita": unita, "user": user, "active_tab": "pattuglie"},
     )
 
 
@@ -79,8 +92,9 @@ async def edit_pattuglia_form(
     )
 
     return templates.TemplateResponse(
+        request,
         "edit_pattuglia.html",
-        {"request": request, "pattuglia": pattuglia, "unita": unita, "completions": completions, "user": user},
+        {"pattuglia": pattuglia, "unita": unita, "completions": completions, "user": user},
     )
 
 
@@ -116,8 +130,9 @@ async def delete_pattuglia(pattuglia_id: int, db: Session = Depends(get_db)):
 async def admin_challenges(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     challenges = db.query(Challenge).all()
     return templates.TemplateResponse(
+        request,
         "admin_challenges.html",
-        {"request": request, "challenges": challenges, "user": user, "active_tab": "challenges"},
+        {"challenges": challenges, "user": user, "active_tab": "challenges"},
     )
 
 
@@ -156,7 +171,7 @@ async def edit_challenge_form(
     )
 
     return templates.TemplateResponse(
-        "edit_challenge.html", {"request": request, "challenge": challenge, "completions": completions, "user": user}
+        request, "edit_challenge.html", {"challenge": challenge, "completions": completions, "user": user}
     )
 
 
@@ -220,9 +235,80 @@ async def delete_challenge(challenge_id: int, db: Session = Depends(get_db)):
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     users = db.query(User).options(joinedload(User.unita)).all()
+    unita = db.query(Unita).all()
     return templates.TemplateResponse(
-        "admin_users.html", {"request": request, "users": users, "user": user, "active_tab": "users"}
+        request, "admin_users.html", {"users": users, "unita": unita, "user": user, "active_tab": "users"}
     )
+
+
+@router.post("/users")
+async def create_user(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(""),
+    role: str = Form(...),
+    unita_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    import secrets
+    import string
+
+    from app.auth import pwd_context
+
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    random_password = "".join(secrets.choice(alphabet) for i in range(12))
+    hashed_pw = pwd_context.hash(random_password)
+
+    new_user = User(
+        username=username, email=email, role=role, unita_id=unita_id if unita_id else None, password_hash=hashed_pw
+    )
+    db.add(new_user)
+    db.commit()
+
+    users = db.query(User).options(joinedload(User.unita)).all()
+    unita_list = db.query(Unita).all()
+
+    return templates.TemplateResponse(
+        request,
+        "admin_users.html",
+        {
+            "users": users,
+            "unita": unita_list,
+            "user": user,
+            "active_tab": "users",
+            "new_user_password": random_password,
+            "new_username": username,
+        },
+    )
+
+
+@router.post("/users/{user_id}/edit")
+async def edit_user(
+    user_id: int,
+    username: str = Form(...),
+    email: str = Form(""),
+    role: str = Form(...),
+    unita_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    user_to_edit = db.query(User).filter(User.id == user_id).first()
+    if user_to_edit:
+        user_to_edit.username = username
+        user_to_edit.email = email
+        user_to_edit.role = role
+        user_to_edit.unita_id = unita_id if unita_id else None
+        db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/users/{user_id}/delete")
+async def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+    if user_to_delete:
+        db.delete(user_to_delete)
+        db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/users/{user_id}/password")
@@ -243,7 +329,7 @@ async def reset_user_password(user_id: int, password: str = Form(...), db: Sessi
 async def admin_terreni(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     terreni = db.query(Terreno).all()
     return templates.TemplateResponse(
-        "admin_terreni.html", {"request": request, "user": user, "terreni": terreni, "active_tab": "terreni"}
+        request, "admin_terreni.html", {"user": user, "terreni": terreni, "active_tab": "terreni"}
     )
 
 
@@ -255,6 +341,7 @@ async def create_terreno(
     center_lat: str = Form(...),
     center_lon: str = Form(...),
     polygon: str = Form(...),
+    tipo_accesso: str = Form("entrambi"),
     db: Session = Depends(get_db),
     user: User = Depends(get_admin_user),
 ):
@@ -268,7 +355,12 @@ async def create_terreno(
         )
 
     new_terreno = Terreno(
-        name=name, tags=normalized_tags, center_lat=center_lat, center_lon=center_lon, polygon=polygon
+        name=name,
+        tags=normalized_tags,
+        center_lat=center_lat,
+        center_lon=center_lon,
+        polygon=polygon,
+        tipo_accesso=tipo_accesso,
     )
     db.add(new_terreno)
     db.commit()
@@ -291,8 +383,9 @@ async def edit_terreno(
     )
 
     return templates.TemplateResponse(
+        request,
         "edit_terreno.html",
-        {"request": request, "user": user, "terreno": terreno, "prenotazioni": prenotazioni, "active_tab": "terreni"},
+        {"user": user, "terreno": terreno, "prenotazioni": prenotazioni, "active_tab": "terreni"},
     )
 
 
@@ -305,6 +398,7 @@ async def update_terreno(
     center_lat: str = Form(...),
     center_lon: str = Form(...),
     polygon: str = Form(...),
+    tipo_accesso: str = Form("entrambi"),
     db: Session = Depends(get_db),
     user: User = Depends(get_admin_user),
 ):
@@ -326,6 +420,7 @@ async def update_terreno(
     terreno.center_lat = center_lat
     terreno.center_lon = center_lon
     terreno.polygon = polygon
+    terreno.tipo_accesso = tipo_accesso
 
     db.commit()
     return RedirectResponse(url=f"/admin/terreni/{terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
@@ -365,8 +460,10 @@ async def rollback_completion(completion_id: int, request: Request, db: Session 
     if completion:
         # Deduct points
         pattuglia = completion.pattuglia
-        challenge = completion.challenge
-        pattuglia.current_score -= challenge.points
+        if completion.is_manual:
+            pattuglia.current_score -= completion.manual_points or 0
+        elif completion.challenge:
+            pattuglia.current_score -= completion.challenge.points
 
         db.delete(completion)
         db.commit()

@@ -3,10 +3,16 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeSTiale Esplo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>BeSTiapp</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -20,6 +26,58 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .table-responsive th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f9fafb;
+        }
+
+        table.sticky-col-1 th:first-child,
+        table.sticky-col-1 td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+            background-color: #ffffff;
+        }
+
+        table.sticky-col-1 th:first-child {
+            z-index: 12;
+            background-color: #f9fafb;
+        }
+
+        @media (max-width: 768px) {
+            .hide-on-mobile {
+                display: none !important;
+            }
         }
     </style>
     <script>
@@ -55,25 +113,35 @@
                 <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center">
                     <span class="font-black text-2xl tracking-tighter text-scout-800">
-                        BeSTiale <span class="text-scout-600">Esplo</span>
+                        BeSTI<span class="text-scout-600">app</span>
                     </span>
 
                     <!-- Desktop Navigation Groups -->
                     <div class="hidden sm:flex sm:items-center sm:space-x-6 ml-10">
                         <!-- Public Area -->
                         <div class="flex space-x-1 bg-scout-50/80 rounded-lg p-1 border border-scout-200 items-center">
+                            {% if not (user and user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                             <a href="/"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Classifica
                             </a>
+                            {% endif %}
+                            {% if user and not (user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                             <a href="/timeline"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Timeline
                             </a>
+                            {% endif %}
+                            {% if user %}
                             <a href="/prenotazioni"
                                 class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
                                 Calendario Terreni
                             </a>
+                            <a href="/supporto"
+                                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-scout-700 hover:bg-white/60 transition-colors">
+                                Supporto
+                            </a>
+                            {% endif %}
                         </div>
 
                         <!-- Management Area (Tech/Admin) -->
@@ -115,7 +183,19 @@
                         <div class="flex items-center space-x-3 pl-4 border-l border-gray-200">
                             <div class="flex flex-col text-right hidden md:flex">
                                 <span class="text-sm font-bold text-gray-700 leading-none">{{ user.username }}</span>
-                                <span class="text-xs text-gray-400 uppercase tracking-wider">{{ user.role }}</span>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider">
+                                    {% if user.role == 'unit' and user.unita %}
+                                        {{ user.unita.tipo }}
+                                    {% elif user.role == 'unit' %}
+                                        Unit&agrave;
+                                    {% elif user.role == 'tech' %}
+                                        Staff
+                                    {% elif user.role == 'admin' %}
+                                        Direzione
+                                    {% else %}
+                                        {{ user.role }}
+                                    {% endif %}
+                                </span>
                             </div>
                             <a href="/logout"
                                 class="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors"
@@ -135,10 +215,18 @@
             <!-- Mobile menu -->
             <div class="sm:hidden flex flex-col pb-2 border-t border-gray-200 pt-2 bg-white/50">
                 <div class="flex justify-around px-2">
+                    {% if not (user and user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                     <a href="/" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Classifica</a>
+                    {% endif %}
+                    {% if user and not (user.role == 'unit' and user.unita and user.unita.tipo == 'Posto') %}
                     <a href="/timeline" class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Timeline</a>
+                    {% endif %}
+                    {% if user %}
                     <a href="/prenotazioni"
                         class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Calendario</a>
+                    <a href="/supporto"
+                        class="text-gray-600 hover:text-scout-700 text-sm font-medium py-2">Supporto</a>
+                    {% endif %}
                 </div>
                 {% if user and user.role in ['tech', 'admin'] %}
                 <div class="flex justify-around mt-2 border-t border-gray-100 pt-2 px-2 bg-blue-50/30">
@@ -151,7 +239,7 @@
                 {% endif %}
                 {% if user and user.role == 'admin' %}
                 <div class="flex justify-center mt-2 border-t border-gray-100 pt-2 px-2 bg-red-50/30">
-                    <a href="/admin" class="text-red-600 hover:text-red-800 text-sm font-bold py-2">Admin Dashboard</a>
+                    <a href="/admin" class="text-red-600 hover:text-red-800 text-sm font-bold py-2">Pannello Admin</a>
                 </div>
                 {% endif %}
             </div>
@@ -163,9 +251,20 @@
 
     <footer class="bg-white/30 border-t border-white/20 mt-12 py-8">
         <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            &copy; 2025 Scout Camp Ranking. Built with Python & FastAPI.
+            &copy; 2026 Scout Camp Ranking. Built with Python & FastAPI.
         </div>
     </footer>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>
