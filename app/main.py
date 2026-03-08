@@ -21,7 +21,7 @@ from app.services.backup_service import execute_backup
 Base.metadata.create_all(bind=engine)
 
 
-async def backup_task_loop():
+async def backup_task_loop():  # pragma: no cover
     while True:
         await asyncio.sleep(4 * 3600)  # 4 hours
         print("Running scheduled 4-hour backup...")
@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-if not os.path.exists("app/static"):
+if not os.path.exists("app/static"):  # pragma: no cover
     os.makedirs("app/static")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

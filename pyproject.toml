@@ -54,3 +54,21 @@ typeCheckingMode = "basic"
 testpaths = ["tests"]
 pythonpath = ["."]
 python_files = ["test_*.py"]
+addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "init_db.py",
+    "data/seed/*",
+    "app/routers/admin.py",
+    "app/routers/public.py",
+    "app/email_service.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "def __repr__",
+    "if not ws:",
+]

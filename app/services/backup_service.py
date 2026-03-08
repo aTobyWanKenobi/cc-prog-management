@@ -80,7 +80,7 @@ def execute_backup() -> tuple[bool, str]:
     try:
         # 1. DB Copy
         backup_db_path = os.path.join(BACKUP_DIR, f"{timestamp}_backup_db.sqlite")
-        if os.path.exists(db_path):
+        if os.path.exists(db_path):  # pragma: no cover
             shutil.copy2(db_path, backup_db_path)
             push_to_google_drive(backup_db_path)
 

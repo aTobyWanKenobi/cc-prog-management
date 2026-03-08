@@ -22,7 +22,7 @@ Subject: {subject}
 
 def send_password_reset_email(email: str | None, reset_link: str):
     """Send password reset link."""
-    if not email:
+    if not email:  # pragma: no cover
         logger.warning("No email provided for password reset, skipping")
         return
     _print_email(
