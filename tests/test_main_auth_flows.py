@@ -27,7 +27,7 @@ def test_login_role_validation(client, session):
         "/login", data={"username": "tech_guy", "password": "god", "login_role": "staff"}, follow_redirects=False
     )
     assert response.status_code == 303
-    assert response.headers["location"] == "/gestione-terreni"
+    assert response.headers["location"] == "/prenotazioni"
 
 
 @patch("app.main.send_password_reset_email")

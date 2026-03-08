@@ -1,5 +1,7 @@
+import asyncio
 import os
 import secrets
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
@@ -13,11 +15,32 @@ from app.database import Base, engine, get_db
 from app.email_service import send_password_reset_email
 from app.models import User
 from app.routers import admin, public
+from app.services.backup_service import execute_backup
 
 # Create tables (if not using init_db)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+
+async def backup_task_loop():
+    while True:
+        await asyncio.sleep(4 * 3600)  # 4 hours
+        print("Running scheduled 4-hour backup...")
+        try:
+            execute_backup()
+        except Exception as e:
+            print(f"Scheduled backup failed: {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    backup_task = asyncio.create_task(backup_task_loop())
+    yield
+    # Shutdown actions
+    backup_task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 
 if not os.path.exists("app/static"):
     os.makedirs("app/static")

@@ -84,10 +84,20 @@ def test_gestione_terreni_filtering_staff(client, session):
 
     # Setup reservations
     r1 = Prenotazione(
-        unita_id=u1.id, terreno_id=t1.id, start_time=datetime.now(), end_time=datetime.now(), status="PENDING"
+        unita_id=u1.id,
+        terreno_id=t1.id,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        status="PENDING",
+        duration=1,
     )
     r2 = Prenotazione(
-        unita_id=u1.id, terreno_id=t2.id, start_time=datetime.now(), end_time=datetime.now(), status="APPROVED"
+        unita_id=u1.id,
+        terreno_id=t2.id,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        status="APPROVED",
+        duration=1,
     )
     session.add(r1)
     session.add(r2)

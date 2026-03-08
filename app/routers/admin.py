@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+import shutil
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth import get_admin_user
-from app.database import get_db
+from app.database import SQLALCHEMY_DATABASE_URL, get_db
 from app.models import (
     Challenge,
     Completion,
@@ -15,6 +17,7 @@ from app.models import (
     Unita,
     User,
 )
+from app.services.backup_service import execute_backup
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_admin_user)])
 
@@ -48,6 +51,31 @@ async def reset_database(request: Request, user: User = Depends(get_admin_user))
         init_db.reset_and_init_db()
     except Exception as e:
         print(f"Error checking DB reset: {e}")
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- Backup & Restore ---
+@router.post("/backup")
+async def trigger_backup(request: Request, user: User = Depends(get_admin_user)):
+    success, msg = execute_backup()
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/restore")
+async def restore_database(request: Request, file: UploadFile = File(...), user: User = Depends(get_admin_user)):
+    if not file.filename or (not file.filename.endswith(".sqlite") and not file.filename.endswith(".db")):
+        raise HTTPException(status_code=400, detail="Il file deve essere .sqlite o .db")
+
+    db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
+
+    # Save the uploaded file temporarily
+    temp_path = f"{db_path}.tmp"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Replace the current db safely
+    shutil.move(temp_path, db_path)
+
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 

@@ -32,11 +32,21 @@
         </nav>
     </div>
 
-    <!-- System Actions -->
-    <div class="mb-8 pl-4" x-data="{ showResetModal: false }">
-        <button @click="showResetModal = true" type="button" class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-sm border border-transparent">
-            Reset & Inizializza Database
-        </button>
+    <!-- System Actions & Backup -->
+    <div class="mb-8 pl-4 space-y-4" x-data="{ showResetModal: false, showRestoreModal: false }">
+        <div class="flex flex-wrap gap-4">
+            <button @click="showResetModal = true" type="button" class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-sm border border-transparent">
+                Reset & Inizializza Database
+            </button>
+            <form action="/admin/backup" method="post" class="inline">
+                <button type="submit" class="px-6 py-2 bg-scout-600 text-white font-bold rounded-lg hover:bg-scout-700 transition shadow-sm border border-transparent">
+                    Esegui Backup Manuale
+                </button>
+            </form>
+            <button @click="showRestoreModal = true" type="button" class="px-6 py-2 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 transition shadow-sm border border-transparent">
+                Ripristina da Backup
+            </button>
+        </div>
 
         <!-- Reset Confirmation Modal -->
         <div x-show="showResetModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
@@ -78,6 +88,45 @@
                             Annulla
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Modal -->
+        <div x-show="showRestoreModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="showRestoreModal" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showRestoreModal = false"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="showRestoreModal" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <form action="/admin/restore" method="post" enctype="multipart/form-data">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                        Ripristina Database da Backup
+                                    </h3>
+                                    <div class="mt-2 text-sm text-gray-500 space-y-2">
+                                        <p>Carica un file di backup <code>.sqlite</code> per sovrascrivere lo stato corrente. Questa azione &egrave; irreversibile.</p>
+                                        <input type="file" name="file" accept=".sqlite,.db" required class="mt-2 block w-full text-sm text-gray-500
+                                            file:mr-4 file:py-2 file:px-4
+                                            file:rounded-md file:border-0
+                                            file:text-sm file:font-semibold
+                                            file:bg-scout-50 file:text-scout-700
+                                            hover:file:bg-scout-100
+                                            "/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Carica e Ripristina
+                            </button>
+                            <button type="button" @click="showRestoreModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-scout-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Annulla
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
