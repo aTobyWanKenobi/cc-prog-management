@@ -165,12 +165,15 @@ cython_debug/
 # Local configuration
 config.local.yaml
 params.local.yaml
-credentials.txt
+data/credentials.txt
 
 # Data
 data/results/
 data/raw/
 data/backups/
+data/camp.db
+data/*.db
+data/*.db-journal
 !data/seed/
 data/seed/riservazioni_test.csv
 data/seed/unita.csv
@@ -181,7 +184,7 @@ logs/
 # Geographic data
 geo/
 
-# SQLite databases
+# SQLite databases (redundant now, but good to keep local root clean)
 test_uat.db
 camp.db
 *.db

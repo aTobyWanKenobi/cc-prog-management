@@ -247,7 +247,7 @@ def reset_and_init_db(db=None):
                 db.add(unit_user)
         db.commit()
 
-        # Export Admin DB UI to credentials.txt is no longer needed or we can do it silently
+        # Export Admin DB UI to data/credentials.txt is no longer needed or we can do it silently
 
     finally:
         if own_session:

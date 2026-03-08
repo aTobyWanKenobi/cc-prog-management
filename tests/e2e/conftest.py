@@ -60,7 +60,9 @@ def live_server():
         import sys
 
         python_exe = sys.executable
-        result = subprocess.run([python_exe, "init_db.py"], capture_output=True, text=True, env=os.environ)
+        result = subprocess.run(
+            [python_exe, os.path.join("app", "utils", "init_db.py")], capture_output=True, text=True, env=os.environ
+        )
         if result.returncode != 0:
             print("init_db.py failed!")
             print(f"STDOUT: {result.stdout}")

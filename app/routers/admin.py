@@ -45,7 +45,7 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), user:
 
 @router.post("/reset-db")
 async def reset_database(request: Request, user: User = Depends(get_admin_user)):
-    import init_db
+    from app.utils import init_db
 
     try:
         init_db.reset_and_init_db()

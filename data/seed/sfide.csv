@@ -4,3 +4,4 @@ Name,Description,Points,IsFungo,RewardTokens
 "Canto Serale","Animazione del fuoco di bivacco.",30,False,0
 "Fungo Raro","Sfida segreta del bosco trovata.",100,True,2
 "Pionieristica Avanzata","Costruzione di un tavolo sopraelevato.",80,False,1
+"Nuova sfida","Descrizione nuova sfida",10,False,0
