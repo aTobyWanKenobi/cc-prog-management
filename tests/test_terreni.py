@@ -67,7 +67,7 @@ def test_gestione_terreni_filtering_staff(client, session):
     from app.models import Unita, User
 
     MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU"
-    tech = User(username="tech", password_hash=MOCK_HASH, role="tech")
+    tech = User(username="admin_test", password_hash=MOCK_HASH, role="admin")
     session.add(tech)
 
     # Setup Unita
@@ -103,8 +103,8 @@ def test_gestione_terreni_filtering_staff(client, session):
     session.add(r2)
     session.commit()
 
-    # Login as tech
-    client.post("/login", data={"username": "tech", "password": "god", "login_role": "staff"})
+    # Login as admin
+    client.post("/login", data={"username": "admin_test", "password": "god", "login_role": "direzione"})
 
     # Get all terrains
     response = client.get("/gestione-terreni")

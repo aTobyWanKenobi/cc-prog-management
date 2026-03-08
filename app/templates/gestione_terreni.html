@@ -32,8 +32,8 @@
                 Calendario Occupazione (25 Lug - 08 Ago)
             </h3>
         </div>
-        <div class="p-4 overflow-x-auto">
-            <div class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px]">
+        <div class="p-4 overflow-x-auto w-full">
+            <div class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px] w-full">
                 <!-- Header Row (Days) -->
                 <div class="bg-gray-50 p-1 sticky left-0 z-20"></div>
                 <template x-for="(day, index) in calendarDays" :key="index">
@@ -45,8 +45,9 @@
                     <contents class="contents">
                         <div class="bg-gray-50 p-1 text-right text-gray-400 sticky left-0 z-10" x-text="((step + 6) % 24) + ':00'"></div>
                         <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
-                            <div class="bg-white h-6 relative group border-white/50 border transition-colors"
-                                :class="getSlotClass(day, step + 6)">
+                            <div class="bg-white h-6 relative group border-white/50 border transition-colors cursor-pointer"
+                                :class="getSlotClass(day, step + 6)"
+                                @click="selectSlot(day, step + 6)">
                                 <div class="absolute inset-0 overflow-hidden flex items-center px-1 pointer-events-none" x-show="getSlotText(day, step + 6)">
                                     <span class="text-[9px] font-bold text-white whitespace-nowrap truncate leading-none drop-shadow-md" x-text="getSlotText(day, step + 6)"></span>
                                 </div>
@@ -55,6 +56,12 @@
                     </contents>
                 </template>
             </div>
+        </div>
+
+        <!-- Dettaglio Occupazione -->
+        <div class="bg-gray-50 p-4 border-t border-gray-200 min-h-[80px]" id="occupazione-div" x-show="selectedDetails !== null" x-cloak>
+            <h4 class="font-bold text-scout-800 mb-2">Dettagli Occupazione: <span x-text="selectedSlotTime"></span></h4>
+            <div class="text-sm text-gray-700" x-html="selectedDetails"></div>
         </div>
     </div>
     {% endif %}
@@ -168,6 +175,8 @@
             selectedTerrainId: null,
             terrainData: null,
             calendarDays: [],
+            selectedDetails: null,
+            selectedSlotTime: '',
 
             init(terrenoId) {
                 this.selectedTerrainId = terrenoId;
@@ -262,6 +271,38 @@
                     let rEnd = new Date(r.end);
                     return (r.status === 'PENDING' && rStart < slotEnd && rEnd > slotStart);
                 });
+            },
+
+            selectSlot(day, hour) {
+                if (!this.terrainData) return;
+
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                this.selectedSlotTime = `${this.formatDay(day)} ${hour}:00 - ${hour+1}:00`;
+
+                let overlaps = this.terrainData.reservations.filter(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (rStart < slotEnd && rEnd > slotStart);
+                });
+
+                if (overlaps.length === 0) {
+                    this.selectedDetails = '<p class="italic text-gray-500">Nessuna prenotazione in questa fascia oraria.</p>';
+                } else {
+                    let html = '<ul class="list-disc pl-5 space-y-1">';
+                    overlaps.forEach(r => {
+                        let statusColor = r.status === 'APPROVED' ? 'text-green-600' : 'text-yellow-600';
+                        html += `<li><strong>${r.unit_name}</strong> - <span class="${statusColor} font-semibold">${r.status}</span><br>`;
+                        html += `<span class="text-xs text-gray-500">Dalle ${new Date(r.start).getHours()}:00 alle ${new Date(r.end).getHours()}:00</span>`;
+                        if (r.notes) {
+                            html += `<br><span class="text-xs italic text-gray-600">Note: ${r.notes}</span>`;
+                        }
+                        html += `</li>`;
+                    });
+                    html += '</ul>';
+                    this.selectedDetails = html;
+                }
             }
         }
     }

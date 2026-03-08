@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth import get_authenticated_user, get_tech_user
+from app.auth import get_admin_user, get_authenticated_user, get_tech_user
 from app.database import get_db
 from app.email_service import (
     send_reservation_approved_email,
@@ -235,7 +235,7 @@ async def input_page(request: Request, db: Session = Depends(get_db), user: User
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
 async def gestione_terreni(
-    request: Request, terreno_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_tech_user)
+    request: Request, terreno_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_admin_user)
 ):
     pending_query = (
         db.query(Prenotazione)
@@ -271,7 +271,7 @@ async def gestione_terreni(
 async def approve_prenotazione(
     prenotazione_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_tech_user),
+    user: User = Depends(get_admin_user),
 ):
     prenotazione = (
         db.query(Prenotazione)
@@ -313,7 +313,7 @@ async def approve_prenotazione(
 async def reject_prenotazione(
     prenotazione_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_tech_user),
+    user: User = Depends(get_admin_user),
 ):
     prenotazione = (
         db.query(Prenotazione)

@@ -132,9 +132,8 @@ def test_other_public_pages(client, session):
     response = client.get("/input")
     assert response.status_code == 200
 
-    # Gestione Terreni
-    response = client.get("/gestione-terreni")
-    assert response.status_code == 200
+    # Gestione Terreni requires admin now, so don't test it for tech here
+    # (Tested separately in test_terreni.py)
 
     # Timeline
     response = client.get("/timeline")
