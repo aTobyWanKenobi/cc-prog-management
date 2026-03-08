@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8">
+    <div class="glass sm:rounded-lg overflow-hidden border-2 shadow-sm border-scout-100">
+        <div class="p-6">
+            <h2 class="text-2xl font-black tracking-tight text-scout-800 mb-6">Contatta il Supporto</h2>
+
+            {% if success %}
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 relative" role="alert">
+                <p class="text-sm font-medium text-green-700">La tua richiesta di supporto è stata inviata con successo. Il team Tech ti risponderà il prima possibile.</p>
+                <div class="mt-4">
+                    <a href="/" class="text-sm text-green-700 hover:text-green-800 font-bold underline">Torna alla dashboard</a>
+                </div>
+            </div>
+            {% else %}
+
+            {% if error %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <p class="text-sm text-red-700">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <div class="prose text-gray-600 mb-8 max-w-none text-sm">
+                <p>Compila il modulo sottostante per inoltrare una richiesta di supporto al team Tech. Verrai ricontattato all'indirizzo email associato al tuo account, se disponibile, oppure direttamente al Campo.</p>
+            </div>
+
+            <form action="/supporto" method="post" class="space-y-6">
+                <div>
+                    <label for="subject" class="block text-sm font-bold text-gray-700 mb-1">Oggetto</label>
+                    <input type="text" name="subject" id="subject" required
+                        class="block w-full border-2 border-scout-100/50 bg-white/50 rounded-lg p-3 text-scout-900 shadow-sm focus:ring-2 focus:ring-scout-500 focus:border-scout-500 transition-all placeholder-scout-300"
+                        placeholder="In breve, di cosa hai bisogno?">
+                </div>
+
+                <div>
+                    <label for="message" class="block text-sm font-bold text-gray-700 mb-1">Messaggio</label>
+                    <textarea name="message" id="message" rows="5" required
+                        class="block w-full border-2 border-scout-100/50 bg-white/50 rounded-lg p-3 text-scout-900 shadow-sm focus:ring-2 focus:ring-scout-500 focus:border-scout-500 transition-all placeholder-scout-300"
+                        placeholder="Descrivi dettagliatamente il problema o la tua richiesta..."></textarea>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100 flex justify-end">
+                    <button type="submit"
+                        class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-bold rounded-lg text-white bg-scout-600 hover:bg-scout-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-scout-500 transition-colors">
+                        Invia Richiesta
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

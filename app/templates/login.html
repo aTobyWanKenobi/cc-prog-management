@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Punteggiometro</title>
+    <title>Login - BeSTiapp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -32,42 +33,111 @@
     </script>
 </head>
 
-<body class="bg-gradient-to-br from-scout-50 to-green-100 min-h-screen flex items-center justify-center px-4">
-    <div class="max-w-md w-full space-y-8 glass p-8 rounded-xl shadow-lg">
-        <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-scout-800">
-                Accedi al Campo ⛺
+<body class="bg-gradient-to-br from-scout-50 to-green-100 min-h-screen flex items-center justify-center px-4" x-data="{ role: 'reparto' }">
+    <div class="max-w-md w-full space-y-6 glass p-8 rounded-xl shadow-lg">
+        <div class="text-center">
+            <h2 class="mt-2 text-3xl font-extrabold text-scout-800">
+                BeSTiapp ⛺
             </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Seleziona il tuo ruolo per accedere
+            </p>
         </div>
-        <form class="mt-8 space-y-6" action="/login" method="POST">
+
+        <!-- Role Selector Tabs -->
+        <div class="flex rounded-lg shadow-sm overflow-x-auto">
+            <button type="button" @click="role = 'reparto'"
+                :class="{'bg-scout-600 text-white': role === 'reparto', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'reparto'}"
+                class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-l-lg transition-colors border border-gray-200 border-r-0 whitespace-nowrap">
+                Reparto (Esplo)
+            </button>
+            <button type="button" @click="role = 'posto'"
+                :class="{'bg-purple-600 text-white': role === 'posto', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'posto'}"
+                class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold transition-colors border-t border-b border-l border-gray-200 whitespace-nowrap">
+                Posto (Pio)
+            </button>
+            <button type="button" @click="role = 'staff'"
+                :class="{'bg-blue-600 text-white': role === 'staff', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'staff'}"
+                class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold transition-colors border-t border-b border-l border-gray-200 whitespace-nowrap">
+                Staff
+            </button>
+            <button type="button" @click="role = 'direzione'"
+                :class="{'bg-red-600 text-white': role === 'direzione', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'direzione'}"
+                class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-r-lg transition-colors border border-gray-200 border-l-0 whitespace-nowrap">
+                Admin
+            </button>
+        </div>
+
+        <form class="mt-6 space-y-6" action="/login" method="POST">
+            <input type="hidden" name="login_role" :value="role">
+
+            <!-- Helper text based on role -->
+            <div class="text-sm p-3 rounded-md bg-white/70 border"
+                :class="{
+                    'border-scout-200 text-scout-800': role === 'reparto',
+                    'border-purple-200 text-purple-800': role === 'posto',
+                    'border-blue-200 text-blue-800': role === 'staff',
+                    'border-red-200 text-red-800': role === 'direzione'
+                }">
+                <p x-show="role === 'reparto'"><strong>Reparto Esploratori:</strong> Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo reparto.</p>
+                <p x-show="role === 'posto'" x-cloak><strong>Posto Pionieri:</strong> Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo posto.</p>
+                <p x-show="role === 'staff'" x-cloak><strong>Membri Staff:</strong> Usa le credenziali fornite (es. <em>prog</em>).</p>
+                <p x-show="role === 'direzione'" x-cloak><strong>Direzione Campo:</strong> Accesso amministrativo completo.</p>
+            </div>
+
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>
-                    <label for="username" class="sr-only">Username</label>
+                    <label for="username" class="sr-only">Nome Utente</label>
                     <input id="username" name="username" type="text" required
-                        class="appearance-none rounded-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-scout-500 focus:border-scout-500 focus:z-10 sm:text-sm"
-                        placeholder="Username">
+                        class="appearance-none rounded-none rounded-t-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm bg-white/90"
+                        :class="{
+                            'focus:ring-scout-500 focus:border-scout-500': role === 'reparto', 'focus:ring-purple-500 focus:border-purple-500': role === 'posto',
+                            'focus:ring-blue-500 focus:border-blue-500': role === 'staff',
+                            'focus:ring-red-500 focus:border-red-500': role === 'direzione'
+                        }"
+                        placeholder="Nome Utente">
                 </div>
                 <div>
                     <label for="password" class="sr-only">Password</label>
                     <input id="password" name="password" type="password" required
-                        class="appearance-none rounded-none rounded-b-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-scout-500 focus:border-scout-500 focus:z-10 sm:text-sm"
+                        class="appearance-none rounded-none rounded-b-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm bg-white/90"
+                        :class="{
+                            'focus:ring-scout-500 focus:border-scout-500': role === 'reparto', 'focus:ring-purple-500 focus:border-purple-500': role === 'posto',
+                            'focus:ring-blue-500 focus:border-blue-500': role === 'staff',
+                            'focus:ring-red-500 focus:border-red-500': role === 'direzione'
+                        }"
                         placeholder="Password">
                 </div>
             </div>
 
             <div>
                 <button type="submit"
-                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-scout-600 hover:bg-scout-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-scout-500">
+                    :class="{
+                        'bg-scout-600 hover:bg-scout-700 focus:ring-scout-500': role === 'reparto', 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500': role === 'posto',
+                        'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': role === 'staff',
+                        'bg-red-600 hover:bg-red-700 focus:ring-red-500': role === 'direzione'
+                    }"
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors shadow-md">
                     Accedi
                 </button>
             </div>
+
+            <div class="text-sm text-center mt-4">
+                <a href="/password-reset" class="font-medium text-gray-500 hover:text-scout-600 hover:underline">
+                    Hai dimenticato la password o devi fare il setup?
+                </a>
+            </div>
+
             {% if error %}
-            <div class="text-red-500 text-sm text-center font-bold">
+            <div class="text-red-600 bg-red-50 border border-red-200 p-2 rounded-md text-sm text-center font-bold">
                 {{ error }}
             </div>
             {% endif %}
         </form>
     </div>
+
+    <!-- Alpine.js is needed for the x-data logic, so ensure we add it if not in base.html but login doesn't extend base -->
+    <script src="//unpkg.com/alpinejs" defer></script>
 </body>
 
 </html>

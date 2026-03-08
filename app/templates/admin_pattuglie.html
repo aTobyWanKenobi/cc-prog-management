@@ -11,7 +11,7 @@
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <a href="/admin"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Dashboard & Log
+                Pannello & Log
             </a>
             <a href="/admin/pattuglie"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-scout-600 text-scout-800">
@@ -56,13 +56,13 @@
     </div>
 
     <!-- Pattuglie List -->
-    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto"
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg table-responsive"
         x-data="{ search: '' }">
         <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <input type="text" x-model="search" placeholder="Cerca pattuglia..."
                 class="shadow-sm focus:ring-scout-500 focus:border-scout-500 block w-full sm:text-sm border-gray-300 rounded-md p-2">
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
             <thead class="bg-scout-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Nome

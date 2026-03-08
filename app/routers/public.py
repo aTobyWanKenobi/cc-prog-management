@@ -1,14 +1,20 @@
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth import get_authenticated_user, get_tech_user
+from app.auth import get_admin_user, get_authenticated_user, get_tech_user
 from app.database import get_db
+from app.email_service import (
+    send_reservation_approved_email,
+    send_reservation_rejected_email,
+    send_reservation_requested_email,
+    send_support_email,
+)
 from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
 router = APIRouter(
@@ -22,16 +28,26 @@ templates = Jinja2Templates(directory="app/templates")
 async def ranking_page(
     request: Request,
     sottocampo_filter: str | None = None,
+    tipo_filter: str | None = "Reparto",
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
-    query = db.query(Pattuglia).join(Unita).options(joinedload(Pattuglia.unita))
+    if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
+        return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Filter logic
+    query = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").options(joinedload(Pattuglia.unita))
+
+    # Filter logic for Sottocampo
     if sottocampo_filter and sottocampo_filter.strip():
         query = query.filter(Unita.sottocampo == sottocampo_filter)
     else:
         sottocampo_filter = None
+
+    # Filter logic for Tipo
+    if tipo_filter and tipo_filter.strip():
+        query = query.filter(Unita.tipo == tipo_filter)
+    else:
+        tipo_filter = None
 
     # Sort by score desc
     pattuglie = query.order_by(Pattuglia.current_score.desc()).all()
@@ -43,16 +59,21 @@ async def ranking_page(
     all_unita = db.query(Unita).order_by(Unita.name).all()
 
     # Get unique sottocampi
-    sottocampi = sorted(list(set(u.sottocampo for u in all_unita)))
+    sottocampi = sorted(list(set(u.sottocampo for u in all_unita if u.sottocampo)))
+
+    # Get unique tipi
+    tipi_unita = sorted(list(set(u.tipo for u in all_unita if u.tipo)))
 
     return templates.TemplateResponse(
+        request,
         "ranking.html",
         {
-            "request": request,
             "pattuglie": pattuglie,
             "unita": all_unita,
             "sottocampi": sottocampi,
+            "tipi_unita": tipi_unita,
             "current_sottocampo_filter": sottocampo_filter,
+            "current_tipo_filter": tipo_filter,
             "user": user,
         },
     )
@@ -71,24 +92,246 @@ async def prenotazioni_page(
             .order_by(Prenotazione.start_time)
             .all()
         )
+    elif user.role in ["tech", "admin"]:
+        # Tech/admin see all reservations
+        user_reservations = (
+            db.query(Prenotazione)
+            .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+            .order_by(Prenotazione.start_time)
+            .all()
+        )
 
     return templates.TemplateResponse(
-        "prenotazioni.html", {"request": request, "user": user, "user_reservations": user_reservations}
+        request, "prenotazioni.html", {"user": user, "user_reservations": user_reservations}
     )
+
+
+@router.post("/prenotazioni/cancel/{prenotazione_id}")
+async def cancel_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Units can only cancel their own PENDING reservations
+    if user.role == "unit" and (prenotazione.unita_id != user.unita_id or prenotazione.status != "PENDING"):
+        raise HTTPException(status_code=403, detail="Non puoi annullare questa prenotazione")
+
+    prenotazione.status = "CANCELLED"
+    db.commit()
+    return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni")
+async def create_prenotazione(
+    terreno_id: int = Form(...),
+    start_date: str = Form(...),
+    start_hour: int = Form(...),
+    duration: int = Form(...),
+    notes: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    if user.role != "unit" or not user.unita_id:
+        raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
+
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    if not terreno:
+        raise HTTPException(status_code=404, detail="Terreno non trovato.")
+
+    tipo_unita = user.unita.tipo.lower() if user.unita else None
+    if tipo_unita and terreno.tipo_accesso != "entrambi" and terreno.tipo_accesso != tipo_unita:
+        raise HTTPException(
+            status_code=403, detail=f"Questo terreno non è disponibile per la tua branca ({tipo_unita.capitalize()})."
+        )
+
+    if start_hour < 7 or start_hour + duration > 25:
+        raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
+
+    if duration < 1 or duration > 4:
+        raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
+
+    try:
+        base_date = datetime.strptime(start_date, "%Y-%m-%d")
+        start_time = base_date + timedelta(hours=start_hour)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data o ora non valida.") from None
+
+    end_time = start_time + timedelta(hours=duration)
+
+    # Check for overlapping reservations on the same terrain
+    overlap = (
+        db.query(Prenotazione)
+        .filter(
+            Prenotazione.terreno_id == terreno_id,
+            Prenotazione.status == "APPROVED",
+            Prenotazione.start_time < end_time,
+            Prenotazione.end_time > start_time,
+        )
+        .first()
+    )
+
+    if overlap:
+        return RedirectResponse(url="/prenotazioni?error=overlap", status_code=status.HTTP_303_SEE_OTHER)
+
+    new_prenotazione = Prenotazione(
+        terreno_id=terreno_id,
+        unita_id=user.unita_id,
+        start_time=start_time,
+        end_time=end_time,
+        duration=duration,
+        notes=notes,
+        status="PENDING",
+    )
+    db.add(new_prenotazione)
+    db.commit()
+
+    # Send email notification
+    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+    unita = db.query(Unita).filter(Unita.id == user.unita_id).first()
+    if terreno and unita:
+        send_reservation_requested_email(
+            unit_email=unita.email,
+            unit_name=unita.name,
+            terrain_name=terreno.name,
+            start_time=start_time.strftime("%d/%m %H:%M"),
+            end_time=end_time.strftime("%d/%m %H:%M"),
+        )
+
+    return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni/update-notes/{prenotazione_id}")
+async def update_prenotazione_notes(
+    prenotazione_id: int,
+    notes: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Only owner or admin/tech can edit notes
+    if user.role == "unit" and prenotazione.unita_id != user.unita_id:
+        raise HTTPException(status_code=403, detail="Non sei autorizzato a modificare queste note.")
+
+    prenotazione.notes = notes
+    db.commit()
+    return RedirectResponse(url="/prenotazioni?success=notes_updated", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/input", response_class=HTMLResponse)
 async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
-    pattuglie = db.query(Pattuglia).order_by(Pattuglia.name).all()
+    pattuglie = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").order_by(Pattuglia.name).all()
     challenges = db.query(Challenge).order_by(Challenge.name).all()
     return templates.TemplateResponse(
-        "input.html", {"request": request, "pattuglie": pattuglie, "challenges": challenges, "user": user}
+        request, "input.html", {"pattuglie": pattuglie, "challenges": challenges, "user": user}
     )
 
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
-async def gestione_terreni_page(request: Request, user: User = Depends(get_tech_user)):
-    return templates.TemplateResponse("gestione_terreni.html", {"request": request, "user": user})
+async def gestione_terreni(
+    request: Request, terreno_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_admin_user)
+):
+    pending_query = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.status == "PENDING")
+    )
+
+    approved_query = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.status == "APPROVED")
+    )
+
+    if terreno_id:
+        pending = pending_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time).all()
+        approved = (
+            approved_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time.desc()).all()
+        )
+    else:
+        pending = pending_query.order_by(Prenotazione.start_time).all()
+        approved = approved_query.order_by(Prenotazione.start_time.desc()).limit(20).all()
+
+    terreni = db.query(Terreno).order_by(Terreno.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "gestione_terreni.html",
+        {"user": user, "pending": pending, "approved": approved, "terreni": terreni, "selected_terreno_id": terreno_id},
+    )
+
+
+@router.post("/gestione-terreni/approve/{prenotazione_id}")
+async def approve_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
+    if prenotazione:
+        prenotazione.status = "APPROVED"
+
+        # Reject overlapping PENDING reservations
+        overlapping = (
+            db.query(Prenotazione)
+            .filter(
+                Prenotazione.terreno_id == prenotazione.terreno_id,
+                Prenotazione.id != prenotazione.id,
+                Prenotazione.status == "PENDING",
+                Prenotazione.start_time < prenotazione.end_time,
+                Prenotazione.end_time > prenotazione.start_time,
+            )
+            .all()
+        )
+
+        for overlap in overlapping:
+            overlap.status = "REJECTED"
+
+        db.commit()
+        send_reservation_approved_email(
+            unit_email=prenotazione.unita.email if prenotazione.unita else None,
+            unit_name=prenotazione.unita.name if prenotazione.unita else "N/A",
+            terrain_name=prenotazione.terreno.name if prenotazione.terreno else "N/A",
+            start_time=prenotazione.start_time.strftime("%d/%m %H:%M"),
+            end_time=prenotazione.end_time.strftime("%d/%m %H:%M"),
+        )
+    return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/gestione-terreni/reject/{prenotazione_id}")
+async def reject_prenotazione(
+    prenotazione_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
+    if prenotazione:
+        prenotazione.status = "REJECTED"
+        db.commit()
+        send_reservation_rejected_email(
+            unit_email=prenotazione.unita.email if prenotazione.unita else None,
+            unit_name=prenotazione.unita.name if prenotazione.unita else "N/A",
+            terrain_name=prenotazione.terreno.name if prenotazione.terreno else "N/A",
+            start_time=prenotazione.start_time.strftime("%d/%m %H:%M"),
+            end_time=prenotazione.end_time.strftime("%d/%m %H:%M"),
+        )
+    return RedirectResponse(url="/gestione-terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/complete")
@@ -108,23 +351,58 @@ async def register_completion(
     if existing:
         return RedirectResponse(url="/input?error=already_completed", status_code=status.HTTP_303_SEE_OTHER)
 
+    # Validate Posto
+    pattuglia = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).filter(Pattuglia.id == pattuglia_id).first()
+    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+
+    if not pattuglia or not challenge:
+        return RedirectResponse(url="/input?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+
+    if pattuglia.unita.tipo == "Posto":
+        return RedirectResponse(url="/input?error=invalid_unit_type", status_code=status.HTTP_303_SEE_OTHER)
+
     # Register completion
     new_completion = Completion(pattuglia_id=pattuglia_id, challenge_id=challenge_id)
     db.add(new_completion)
 
     # Update score
-    pattuglia = db.query(Pattuglia).filter(Pattuglia.id == pattuglia_id).first()
-    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+    pattuglia.current_score += challenge.points
+    db.commit()
 
-    if pattuglia and challenge:
-        pattuglia.current_score += challenge.points
-        db.commit()
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/manual-adjustment")
+async def register_manual_adjustment(
+    pattuglia_id: int = Form(...),
+    manual_points: int = Form(...),
+    manual_note: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_tech_user),
+):
+    pattuglia = db.query(Pattuglia).filter(Pattuglia.id == pattuglia_id).first()
+    if not pattuglia:
+        return RedirectResponse(url="/input?error=not_found", status_code=status.HTTP_303_SEE_OTHER)
+
+    new_completion = Completion(
+        pattuglia_id=pattuglia_id,
+        is_manual=True,
+        manual_points=manual_points,
+        manual_note=manual_note,
+    )
+    db.add(new_completion)
+
+    pattuglia.current_score += manual_points
+    db.commit()
 
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/timeline", response_class=HTMLResponse)
 async def timeline_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_authenticated_user)):
+    if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
+        return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
+
     completions = (
         db.query(Completion)
         .options(joinedload(Completion.pattuglia), joinedload(Completion.challenge))
@@ -153,14 +431,17 @@ async def timeline_page(request: Request, db: Session = Depends(get_db), user: U
     # No, that might hide legitimate re-completions if allowed (though /complete blocks it).
     # Let's trust unique IDs for now unless the user confirms double database entries.
 
-    return templates.TemplateResponse(
-        "timeline.html", {"request": request, "completions": unique_completions, "user": user}
-    )
+    return templates.TemplateResponse(request, "timeline.html", {"completions": unique_completions, "user": user})
 
 
 # --- API ---
 @router.get("/api/terreni/availability")
-async def get_terreni_availability(start_date: datetime, end_date: datetime, db: Session = Depends(get_db)):
+async def get_terreni_availability(
+    start_date: datetime,
+    end_date: datetime,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_authenticated_user),
+):
     """
     Returns list of terrains with their availability status for the given range.
     Status: FREE, PARTIAL, BOOKED
@@ -171,7 +452,16 @@ async def get_terreni_availability(start_date: datetime, end_date: datetime, db:
     if end_date.tzinfo is not None:
         end_date = end_date.replace(tzinfo=None)
 
-    terreni = db.query(Terreno).all()
+    terreni_query = db.query(Terreno)
+
+    tipo_unita = None
+    if user.role == "unit" and user.unita:
+        tipo_unita = user.unita.tipo.lower()
+
+    if tipo_unita:
+        terreni_query = terreni_query.filter(Terreno.tipo_accesso.in_(["entrambi", tipo_unita]))
+
+    terreni = terreni_query.all()
     results = []
 
     for t in terreni:
@@ -203,20 +493,21 @@ async def get_terreni_availability(start_date: datetime, end_date: datetime, db:
 
             # Let's calculate covered duration
             total_duration = (end_date - start_date).total_seconds()
-            covered_duration = 0
+            approved_covered = 0
+            pending_covered = 0
 
-            # This is complex because reservations might overlap each other
-            # (though DB shouldn't allow it for same terrain)
-            # Assuming non-overlapping reservations for same terrain:
             for r in reservations:
-                # Intersect reservation [r.start, r.end] with window [start, end]
                 overlap_start = max(r.start_time, start_date)
                 overlap_end = min(r.end_time, end_date)
-                covered_duration += max(0, (overlap_end - overlap_start).total_seconds())
+                dur = max(0, (overlap_end - overlap_start).total_seconds())
+                if getattr(r, "status", "APPROVED") == "APPROVED":
+                    approved_covered += dur
+                elif getattr(r, "status", "") == "PENDING":
+                    pending_covered += dur
 
-            if covered_duration >= total_duration:
+            if approved_covered >= total_duration:
                 status = "BOOKED"
-            elif covered_duration > 0:
+            elif approved_covered > 0 or pending_covered > 0:
                 status = "PARTIAL"
 
         results.append(
@@ -231,7 +522,14 @@ async def get_terreni_availability(start_date: datetime, end_date: datetime, db:
                 "image_urls": t.image_urls,
                 "status": status,
                 "reservations": [
-                    {"start": r.start_time.isoformat(), "end": r.end_time.isoformat(), "unit_name": r.unita.name}
+                    {
+                        "id": r.id,
+                        "start": r.start_time.isoformat(),
+                        "end": r.end_time.isoformat(),
+                        "status": r.status,
+                        "unit_name": r.unita.name,
+                        "notes": r.notes if (user.role in ["admin", "tech"] or user.unita_id == r.unita_id) else "",
+                    }
                     for r in reservations
                 ],
             }
@@ -248,7 +546,14 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
     if user.role == "unit":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    pattuglie = db.query(Pattuglia).options(joinedload(Pattuglia.unita)).order_by(Pattuglia.current_score.desc()).all()
+    pattuglie = (
+        db.query(Pattuglia)
+        .join(Unita)
+        .filter(Unita.tipo == "Reparto")
+        .options(joinedload(Pattuglia.unita))
+        .order_by(Pattuglia.current_score.desc())
+        .all()
+    )
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -259,6 +564,34 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
 
     output.seek(0)
 
-    response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
+    # Explicitly convert to bytes to avoid encoding issues in streaming
+    csv_data = output.getvalue()
+    response = StreamingResponse(io.BytesIO(csv_data.encode("utf-8")), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=classifica_scout.csv"
     return response
+
+
+@router.get("/supporto", response_class=HTMLResponse)
+async def supporto_page(request: Request, user: User = Depends(get_authenticated_user)):
+    """Render the support contact form."""
+    return templates.TemplateResponse(request, "support.html", {"user": user})
+
+
+@router.post("/supporto", response_class=HTMLResponse)
+async def post_supporto(
+    request: Request,
+    subject: str = Form(...),
+    message: str = Form(...),
+    user: User = Depends(get_authenticated_user),
+):
+    """Handle support form submission."""
+    try:
+        user_name = user.unita.name if user.unita else user.username
+        role = user.role
+        email = user.email if user.email else (user.unita.email if user.unita else None)
+        send_support_email(user_email=email, user_name=user_name, subject=subject, message=message, role=role)
+        return templates.TemplateResponse(request, "support.html", {"user": user, "success": True})
+    except Exception as e:
+        return templates.TemplateResponse(
+            request, "support.html", {"user": user, "error": f"Errore durante l'invio: {str(e)}"}
+        )

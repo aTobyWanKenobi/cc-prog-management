@@ -18,8 +18,54 @@
         transition: all 0.2s;
     }
 
-    .calendar-cell:hover {
-        opacity: 0.8;
+    .slot-selected {
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+    }
+
+    /* Custom Sliders */
+    input[type=range].slider-large {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        background: transparent;
+    }
+
+    input[type=range].slider-large::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #0284c7; /* scout-600 */
+        cursor: pointer;
+        margin-top: -8px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input[type=range].slider-large::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: #e5e7eb;
+        border-radius: 4px;
+    }
+
+    input[type=range].slider-large::-moz-range-thumb {
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #0284c7;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        border: none;
+    }
+
+    input[type=range].slider-large::-moz-range-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: #e5e7eb;
+        border-radius: 4px;
     }
 </style>
 {% endblock %}
@@ -37,14 +83,14 @@
                 <input type="date" x-model="filterDate" @change="fetchAvailability()"
                     class="border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
             </div>
-            <div class="w-32">
+            <div class="w-48">
                 <label class="block text-xs font-bold text-gray-400 uppercase">Orario: <span
-                        x-text="filterStartHour"></span>:00 - <span x-text="filterEndHour"></span>:00</label>
-                <div class="flex items-center space-x-2">
-                    <input type="range" min="0" max="23" x-model.number="filterStartHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full accent-scout-600">
-                    <input type="range" min="0" max="24" x-model.number="filterEndHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full accent-scout-600">
+                        x-text="formatHour(filterStartHour)"></span> - <span x-text="formatHour(filterEndHour)"></span></label>
+                <div class="flex items-center space-x-4 mt-2">
+                    <input type="range" min="7" max="24" step="1" x-model.number="filterStartHour"
+                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
+                    <input type="range" min="8" max="25" step="1" x-model.number="filterEndHour"
+                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
                 </div>
             </div>
         </div>
@@ -59,13 +105,13 @@
             <!-- Legend overlay -->
             <div class="absolute bottom-4 left-4 bg-white/90 p-2 rounded-lg shadow-md text-xs z-[400]">
                 <div class="flex items-center space-x-2 mb-1">
-                    <div class="w-3 h-3 bg-green-500 rounded-sm"></div><span>Libero</span>
+                    <div class="w-3 h-3 bg-emerald-500 rounded-sm"></div><span>Libero</span>
                 </div>
                 <div class="flex items-center space-x-2 mb-1">
-                    <div class="w-3 h-3 bg-yellow-400 rounded-sm"></div><span>Parziale</span>
+                    <div class="w-3 h-3 bg-amber-500 rounded-sm"></div><span>Parziale</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 bg-gray-500 rounded-sm"></div><span>Occupato</span>
+                    <div class="w-3 h-3 bg-rose-500 rounded-sm"></div><span>Occupato</span>
                 </div>
             </div>
         </div>
@@ -126,20 +172,23 @@
         </div>
     </div>
 
-    <!-- Calendar Section (Below Map, Full Width) -->
-    <div x-show="selectedTerrain" class="mt-6 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-        style="display: none;">
-        <div class="bg-scout-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="font-bold text-scout-800">
-                Occupazione: <span x-text="selectedTerrain?.name"></span> (25 Lug - 08 Ago)
-            </h3>
-            <button @click="selectedTerrain = null" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="p-4 overflow-x-auto">
+    <!-- Calendar & Form Section -->
+    <div x-show="selectedTerrain" class="grid grid-cols-1 xl:grid-cols-4 gap-6 mt-6 items-start" style="display: none;">
+
+        <!-- Calendar Section -->
+        <div class="xl:col-span-3 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-scout-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-scout-800">
+                    Occupazione: <span x-text="selectedTerrain?.name"></span> (25 Lug - 08 Ago)
+                </h3>
+                <button @click="selectedTerrain = null" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            </div>
+            <div class="p-4 overflow-x-auto" @mouseup.window="endDrag()" @mousemove.window="onGlobalDrag($event)" @mouseleave="endDrag()">
             <div
                 class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px]">
                 <!-- Header Row (Days) -->
@@ -150,77 +199,182 @@
                 </template>
 
                 <!-- Rows (Hours) -->
-                <template x-for="hour in 24" :key="hour">
+                <template x-for="step in 18" :key="step">
                     <contents class="contents"> <!-- Fragment-like -->
                         <div class="bg-gray-50 p-1 text-right text-gray-400 sticky left-0 z-10"
-                            x-text="(hour-1) + ':00'"></div>
+                            x-text="((step + 6) % 24) + ':00'"></div>
 
                         <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
-                            <div class="bg-white h-6 relative group border-white/50 border hover:z-30"
-                                :class="getSlotClass(day, hour-1)">
+                            <div class="bg-white h-6 relative group border-white/50 border select-none transition-colors"
+                                :class="getSlotClass(day, step + 6)"
+                                :data-day="new Date(day).getTime()"
+                                :data-hour="step + 6"
+                                @mousedown.prevent="startDrag(day, step + 6)">
 
-                                <!-- Tooltip on Hover -->
-                                <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs p-1 rounded whitespace-nowrap z-50 mb-1"
-                                    x-text="getSlotTooltip(day, hour-1)">
+                                <div class="absolute inset-0 overflow-hidden flex items-center px-1 pointer-events-none"
+                                     x-show="getSlotText(day, step + 6)">
+                                    <span class="text-[9px] font-bold text-white whitespace-nowrap truncate leading-none drop-shadow-md"
+                                          x-text="getSlotText(day, step + 6)">
+                                    </span>
                                 </div>
                             </div>
                         </template>
                     </contents>
                 </template>
             </div>
+            </div>
         </div>
+
+        <!-- Booking Request Form (Units Only) -->
+        {% if user.role == 'unit' %}
+        <div class="xl:col-span-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden sticky top-6">
+            <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
+                <h3 class="font-bold text-blue-800">Richiedi Prenotazione</h3>
+            </div>
+            <div class="px-6 py-3 bg-blue-50/50 text-xs text-blue-800 border-b border-gray-100 flex items-center">
+                <svg class="w-4 h-4 mr-2 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                Trascina sul calendario per selezionare l'orario (max 4h).
+            </div>
+            <form action="/prenotazioni" method="POST" class="p-6">
+                <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Data Selezionata</label>
+                        <input type="date" name="start_date" x-model="selectedStartDate" required readonly
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
+                        <select name="start_hour" x-model="selectedStartHour" required readonly style="pointer-events: none;"
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                            <template x-for="h in 24" :key="h">
+                                <option :value="(h+6)%24 || 24" x-text="(h+6)%24 + ':00'" :selected="selectedStartHour === ((h+6)%24 || 24)"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Durata (ore)</label>
+                        <select name="duration" x-model="selectedDuration" required readonly style="pointer-events: none;"
+                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                            <option value="1" :selected="selectedDuration == 1">1 ora</option>
+                            <option value="2" :selected="selectedDuration == 2">2 ore</option>
+                            <option value="3" :selected="selectedDuration == 3">3 ore</option>
+                            <option value="4" :selected="selectedDuration == 4">4 ore</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Note (Opzionale)</label>
+                        <textarea name="notes" rows="2" placeholder="Dettagli attività, numeri, richieste"
+                            class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500"></textarea>
+                    </div>
+                </div>
+
+                <div x-show="isSelectionOverlappingPending()" class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800" style="display: none;">
+                    <strong>Attenzione:</strong> C'è già una richiesta pendente per questo orario, ma puoi comunque inviare la tua. Gli Admin valuteranno entrambe le richieste.
+                </div>
+
+                <div class="mt-6 flex flex-col space-y-3">
+                    <p class="text-sm text-gray-500 text-center">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
+                    <button type="submit" :disabled="!selectedStartDate || !selectedStartHour"
+                        class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-3 px-6 rounded-lg transition-colors shadow-md w-full">
+                        Invia Richiesta
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- User Reservations List -->
-    {% if user.role == 'unit' %}
+    <!-- Reservations Dashboard -->
     <div class="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="bg-scout-50 px-6 py-4 border-b border-gray-200">
-            <h3 class="font-bold text-scout-800">Le Tue Prenotazioni</h3>
+            <h3 class="font-bold text-scout-800">
+                {% if user.role == 'unit' %}Le Tue Prenotazioni{% else %}Tutte le Prenotazioni{% endif %}
+            </h3>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Terreno</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Inizio</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Durata</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato
-                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terreno</th>
+                        {% if user.role in ['tech', 'admin'] %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unità</th>
+                        {% endif %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inizio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for res in user_reservations %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m
-                            %H:%M') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m
-                            %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}</td>
+                        {% if user.role in ['tech', 'admin'] %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ res.unita.name }}</td>
+                        {% endif %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {{ res.status }}
-                            </span>
+                            {% if res.status == 'APPROVED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅ Approvata</span>
+                            {% elif res.status == 'PENDING' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ In Attesa</span>
+                            {% elif res.status == 'REJECTED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">❌ Rifiutata</span>
+                            {% elif res.status == 'CANCELLED' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫 Annullata</span>
+                            {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{ res.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if user.role == 'unit' and res.unita_id == user.unita_id %}
+                                <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
+                                    <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Aggiungi una nota..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                    <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
+                                </form>
+                            {% else %}
+                                {{ res.notes or '-' }}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if res.status == 'PENDING' %}
+                                {% if user.role == 'unit' %}
+                                <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors" onclick="return confirm('Annullare questa prenotazione?')">
+                                        Annulla
+                                    </button>
+                                </form>
+                                {% elif user.role in ['tech', 'admin'] %}
+                                <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded mr-1 transition-colors">
+                                        ✅ Approva
+                                    </button>
+                                </form>
+                                <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
+                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors" onclick="return confirm('Rifiutare questa prenotazione?')">
+                                        ❌ Rifiuta
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Nessuna prenotazione
-                            trovata.</td>
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">Nessuna prenotazione trovata.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-    {% endif %}
+
+
 
 </div>
 
@@ -230,12 +384,21 @@
             map: null,
             terrainLayers: {},
             filterDate: '2026-07-25',
-            filterStartHour: 14,
-            filterEndHour: 18,
+            filterStartHour: 7,
+            filterEndHour: 25,
             currentImageIndex: 0,
             selectedTerrain: null,
             terrainsData: [],
             calendarDays: [],
+
+            isDragging: false,
+            dragStartDay: null,
+            dragStartHour: null,
+            dragCurrentHour: null,
+
+            selectedStartDate: '2026-07-25',
+            selectedStartHour: 14,
+            selectedDuration: 2,
 
             init() {
                 this.initMap();
@@ -251,7 +414,16 @@
                 const initialCenter = savedCenter ? JSON.parse(savedCenter) : [46.565, 8.940];
                 const initialZoom = savedZoom ? parseInt(savedZoom) : 14;
 
-                this.map = L.map('map').setView(initialCenter, initialZoom);
+                const campoBlenioBounds = L.latLngBounds(
+                    [46.500, 8.850], // Southwest
+                    [46.620, 9.050]  // Northeast
+                );
+
+                this.map = L.map('map', {
+                    minZoom: 13,
+                    maxBounds: campoBlenioBounds,
+                    maxBoundsViscosity: 1.0
+                }).setView(initialCenter, initialZoom);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
@@ -319,7 +491,7 @@
 
                 this.terrainsData.forEach(t => {
                     let status = this.computeStatus(t.reservations, filterStart, filterEnd);
-                    let color = status === 'FREE' ? '#22c55e' : (status === 'PARTIAL' ? '#eab308' : '#6b7280');
+                    let color = status === 'FREE' ? '#10b981' : (status === 'PARTIAL' ? '#f59e0b' : '#f43f5e');
 
                     let latlngs = JSON.parse(t.polygon);
 
@@ -385,22 +557,146 @@
                 return date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0');
             },
 
+            formatHour(h) {
+                if (h >= 24) {
+                    return ('0' + (h - 24)).slice(-2) + ':00';
+                }
+                return ('0' + h).slice(-2) + ':00';
+            },
+
             getSlotClass(day, hour) {
                 if (!this.selectedTerrain) return '';
 
+                let isApproved = this.isSlotApproved(day, hour);
+                if (isApproved) return 'bg-rose-500 border-rose-600 opacity-90 cursor-not-allowed';
+
+                let isPending = this.isSlotPending(day, hour);
+                if (isPending) {
+                     let isSelected = this.isSlotSelected(day, hour);
+                     if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+                     return 'bg-amber-400 border-amber-500 opacity-90 cursor-pointer hover:bg-amber-300';
+                }
+
+                let isSelected = this.isSlotSelected(day, hour);
+                if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+
+                return 'cursor-pointer hover:bg-scout-100';
+            },
+
+            isSlotApproved(day, hour) {
                 let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
                 let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
 
-                let isBooked = this.selectedTerrain.reservations.some(r => {
+                return this.selectedTerrain.reservations.some(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (rStart < slotEnd && rEnd > slotStart);
+                    return (r.status === 'APPROVED' && rStart < slotEnd && rEnd > slotStart);
                 });
-
-                return isBooked ? 'bg-indigo-100 border-indigo-200' : '';
             },
 
-            getSlotTooltip(day, hour) {
+            isSlotPending(day, hour) {
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                return this.selectedTerrain.reservations.some(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (r.status === 'PENDING' && rStart < slotEnd && rEnd > slotStart);
+                });
+            },
+
+            isSelectionOverlappingPending() {
+                if (!this.selectedStartDate) return false;
+                let parts = this.selectedStartDate.split('-');
+                let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+
+                let startH = parseInt(this.selectedStartHour);
+                let endH = startH + parseInt(this.selectedDuration) - 1;
+
+                for (let h = startH; h <= endH; h++) {
+                    if (this.isSlotPending(selTime, h)) return true;
+                }
+                return false;
+            },
+
+            formatDateForInput(date) {
+                const z = n => ('0' + n).slice(-2);
+                return date.getFullYear() + '-' + z(date.getMonth() + 1) + '-' + z(date.getDate());
+            },
+
+            startDrag(day, hour) {
+                if (this.isSlotApproved(day, hour)) return;
+                this.isDragging = true;
+                this.dragStartDay = new Date(day).getTime();
+                this.dragStartHour = hour;
+                this.dragCurrentHour = hour;
+            },
+
+            onGlobalDrag(e) {
+                if (!this.isDragging) return;
+
+                let el = document.elementFromPoint(e.clientX, e.clientY);
+                if (el && el.dataset.day && el.dataset.hour) {
+                    let elDayTime = parseInt(el.dataset.day);
+                    if (elDayTime === this.dragStartDay) {
+                        this.dragCurrentHour = parseInt(el.dataset.hour);
+                    }
+                }
+            },
+
+            endDrag() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+
+                let startH = Math.min(this.dragStartHour, this.dragCurrentHour);
+                let endH = Math.max(this.dragStartHour, this.dragCurrentHour);
+                let duration = endH - startH + 1;
+
+                if (duration > 4) {
+                    duration = 4;
+                    endH = startH + 3;
+                }
+
+                let valid = true;
+                for (let h = startH; h <= endH; h++) {
+                    if (this.isSlotApproved(this.dragStartDay, h)) {
+                        valid = false; break;
+                    }
+                }
+
+                if (valid) {
+                    this.selectedStartDate = this.formatDateForInput(new Date(this.dragStartDay));
+                    this.selectedStartHour = startH;
+                    this.selectedDuration = duration;
+                }
+
+                this.dragStartDay = null;
+            },
+
+            isSlotSelected(day, hour) {
+                const dayTime = typeof day === 'number' ? day : new Date(day).getTime();
+
+                if (this.isDragging && dayTime === this.dragStartDay) {
+                    let minH = Math.min(this.dragStartHour, this.dragCurrentHour);
+                    let maxH = Math.max(this.dragStartHour, this.dragCurrentHour);
+                    if (maxH - minH + 1 > 4) maxH = minH + 3;
+                    return hour >= minH && hour <= maxH;
+                }
+
+                if (!this.isDragging && this.selectedStartDate) {
+                    let parts = this.selectedStartDate.split('-');
+                    let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+
+                    if (dayTime === selTime) {
+                         const maxH = this.selectedStartHour + parseInt(this.selectedDuration) - 1;
+                         return hour >= this.selectedStartHour && hour <= maxH;
+                    }
+                }
+
+                return false;
+            },
+
+            getSlotText(day, hour) {
                 if (!this.selectedTerrain) return '';
                 let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
                 let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
@@ -411,7 +707,15 @@
                     return (rStart < slotEnd && rEnd > slotStart);
                 });
 
-                return res ? `Prenotato da: ${res.unit_name}` : '';
+                if (res && res.status !== 'CANCELLED' && res.status !== 'REJECTED') {
+                    let rStart = new Date(res.start);
+                    if (rStart.getHours() === hour) {
+                        let rEnd = new Date(res.end);
+                        let duration = (rEnd.getTime() - rStart.getTime()) / 3600000;
+                        return `${res.unit_name} (${duration}h)`;
+                    }
+                }
+                return '';
             }
         }
     }
