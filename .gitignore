@@ -170,6 +170,7 @@ credentials.txt
 # Data
 data/results/
 data/raw/
+data/backups/
 !data/seed/
 data/seed/riservazioni_test.csv
 data/seed/unita.csv
