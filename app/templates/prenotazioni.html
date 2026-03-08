@@ -414,7 +414,16 @@
                 const initialCenter = savedCenter ? JSON.parse(savedCenter) : [46.565, 8.940];
                 const initialZoom = savedZoom ? parseInt(savedZoom) : 14;
 
-                this.map = L.map('map').setView(initialCenter, initialZoom);
+                const campoBlenioBounds = L.latLngBounds(
+                    [46.500, 8.850], // Southwest
+                    [46.620, 9.050]  // Northeast
+                );
+
+                this.map = L.map('map', {
+                    minZoom: 13,
+                    maxBounds: campoBlenioBounds,
+                    maxBoundsViscosity: 1.0
+                }).setView(initialCenter, initialZoom);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
