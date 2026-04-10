@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.auth import get_admin_user, get_authenticated_user, get_tech_user
 from app.database import get_db
 from app.email_service import (
+    get_support_emails,
     send_reservation_approved_email,
     send_reservation_rejected_email,
     send_reservation_requested_email,
@@ -28,13 +29,13 @@ templates = Jinja2Templates(directory="app/templates")
 async def ranking_page(
     request: Request,
     sottocampo_filter: str | None = None,
-    tipo_filter: str | None = "Reparto",
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
     if user.role == "unit" and user.unita and user.unita.tipo == "Posto":
         return RedirectResponse(url="/prenotazioni", status_code=status.HTTP_303_SEE_OTHER)
 
+    # Always show only Reparti (Esploratori)
     query = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").options(joinedload(Pattuglia.unita))
 
     # Filter logic for Sottocampo
@@ -43,12 +44,6 @@ async def ranking_page(
     else:
         sottocampo_filter = None
 
-    # Filter logic for Tipo
-    if tipo_filter and tipo_filter.strip():
-        query = query.filter(Unita.tipo == tipo_filter)
-    else:
-        tipo_filter = None
-
     # Sort by score desc
     pattuglie = query.order_by(Pattuglia.current_score.desc()).all()
 
@@ -56,24 +51,18 @@ async def ranking_page(
     for index, p in enumerate(pattuglie):
         p.rank = index + 1
 
-    all_unita = db.query(Unita).order_by(Unita.name).all()
-
-    # Get unique sottocampi
-    sottocampi = sorted(list(set(u.sottocampo for u in all_unita if u.sottocampo)))
-
-    # Get unique tipi
-    tipi_unita = sorted(list(set(u.tipo for u in all_unita if u.tipo)))
+    # Get unique sottocampi from Reparti only
+    sottocampi = sorted(
+        list(set(u.sottocampo for u in db.query(Unita).filter(Unita.tipo == "Reparto").all() if u.sottocampo))
+    )
 
     return templates.TemplateResponse(
         request,
         "ranking.html",
         {
             "pattuglie": pattuglie,
-            "unita": all_unita,
             "sottocampi": sottocampi,
-            "tipi_unita": tipi_unita,
             "current_sottocampo_filter": sottocampo_filter,
-            "current_tipo_filter": tipo_filter,
             "user": user,
         },
     )
@@ -235,8 +224,9 @@ async def input_page(request: Request, db: Session = Depends(get_db), user: User
 
 @router.get("/gestione-terreni", response_class=HTMLResponse)
 async def gestione_terreni(
-    request: Request, terreno_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_admin_user)
+    request: Request, terreno_id: str = "", db: Session = Depends(get_db), user: User = Depends(get_admin_user)
 ):
+    terreno_id_int = int(terreno_id) if terreno_id.strip().isdigit() else None
     pending_query = (
         db.query(Prenotazione)
         .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
@@ -249,10 +239,14 @@ async def gestione_terreni(
         .filter(Prenotazione.status == "APPROVED")
     )
 
-    if terreno_id:
-        pending = pending_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time).all()
+    if terreno_id_int:
+        pending = (
+            pending_query.filter(Prenotazione.terreno_id == terreno_id_int).order_by(Prenotazione.start_time).all()
+        )
         approved = (
-            approved_query.filter(Prenotazione.terreno_id == terreno_id).order_by(Prenotazione.start_time.desc()).all()
+            approved_query.filter(Prenotazione.terreno_id == terreno_id_int)
+            .order_by(Prenotazione.start_time.desc())
+            .all()
         )
     else:
         pending = pending_query.order_by(Prenotazione.start_time).all()
@@ -263,7 +257,13 @@ async def gestione_terreni(
     return templates.TemplateResponse(
         request,
         "gestione_terreni.html",
-        {"user": user, "pending": pending, "approved": approved, "terreni": terreni, "selected_terreno_id": terreno_id},
+        {
+            "user": user,
+            "pending": pending,
+            "approved": approved,
+            "terreni": terreni,
+            "selected_terreno_id": terreno_id_int,
+        },
     )
 
 
@@ -469,6 +469,7 @@ async def get_terreni_availability(
         # Overlap logic: (StartA <= EndB) and (EndA >= StartB)
         reservations = (
             db.query(Prenotazione)
+            .options(joinedload(Prenotazione.unita))
             .filter(
                 Prenotazione.terreno_id == t.id,
                 Prenotazione.start_time < end_date,
@@ -583,13 +584,17 @@ async def post_supporto(
     subject: str = Form(...),
     message: str = Form(...),
     user: User = Depends(get_authenticated_user),
+    db: Session = Depends(get_db),
 ):
     """Handle support form submission."""
     try:
         user_name = user.unita.name if user.unita else user.username
         role = user.role
         email = user.email if user.email else (user.unita.email if user.unita else None)
-        send_support_email(user_email=email, user_name=user_name, subject=subject, message=message, role=role)
+        recipients = get_support_emails(db)
+        send_support_email(
+            user_email=email, user_name=user_name, subject=subject, message=message, role=role, recipients=recipients
+        )
         return templates.TemplateResponse(request, "support.html", {"user": user, "success": True})
     except Exception as e:
         return templates.TemplateResponse(

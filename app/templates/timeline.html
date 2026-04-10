@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-scout-800 mb-8 text-center">Timeline Eventi</h1>
+    <h1 class="text-3xl font-bold text-scout-800 mb-8 text-center">Sfide completate</h1>
 
     <div class="flow-root">
         <ul role="list" class="-mb-8">
@@ -30,8 +30,10 @@
                             <div>
                                 {% if c.is_manual %}
                                 <p class="text-sm text-gray-500">
-                                    I Custodi hanno {% if c.manual_points and c.manual_points >= 0 %}assegnato{% else %}sottratto{% endif %}
-                                    <span class="font-bold">{{ c.manual_points }}</span> punti alla pattuglia <span class="font-medium text-gray-900">{{ c.pattuglia.name }}</span>.
+                                    I Custodi hanno {% if c.manual_points and c.manual_points >= 0 %}assegnato{% else
+                                    %}sottratto{% endif %}
+                                    <span class="font-bold">{{ c.manual_points }}</span> punti alla pattuglia <span
+                                        class="font-medium text-gray-900">{{ c.pattuglia.name }}</span>.
                                     Motivo: {{ c.manual_note }}
                                 </p>
                                 {% else %}
@@ -54,9 +56,9 @@
                                 <time datetime="{{ c.timestamp }}">{{ c.timestamp.strftime('%H:%M') }}</time>
                                 <div class="font-bold text-scout-600">
                                     {% if c.is_manual %}
-                                        {{ '+' if c.manual_points and c.manual_points > 0 else '' }}{{ c.manual_points }} pt
+                                    {{ '+' if c.manual_points and c.manual_points > 0 else '' }}{{ c.manual_points }} pt
                                     {% else %}
-                                        +{{ c.challenge.points }} pt
+                                    +{{ c.challenge.points }} pt
                                     {% endif %}
                                 </div>
                             </div>

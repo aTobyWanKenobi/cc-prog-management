@@ -15,7 +15,7 @@ def test_login_esplo_unit(page: Page, live_server: str):
     page.click('button[type="submit"]')
 
     # Wait until it redirects and some content is visible
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
+    expect(page.locator("text=Classifica Pattuglie")).to_be_visible()
 
 
 def test_login_admin_db(page: Page, live_server: str):
@@ -130,11 +130,11 @@ def test_submit_support_ticket(page: Page, live_server: str):
     page.fill('input[name="password"]', "scout")
     page.click('button[type="submit"]')
 
-    expect(page.locator("text=Classifica Generale")).to_be_visible()
+    expect(page.locator("text=Classifica Pattuglie")).to_be_visible()
 
-    # Desktop nav link for Supporto
-    page.click("text=Supporto")
-    expect(page.locator("text=Contatta il Supporto")).to_be_visible()
+    # Desktop nav link for Contatto
+    page.click("text=Contatto")
+    expect(page.locator("text=Contatta le")).to_be_visible()
 
     page.fill('input[name="subject"]', "Test Subject E2E")
     page.fill('textarea[name="message"]', "This is a test message from Playwright.")

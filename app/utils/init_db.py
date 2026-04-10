@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 
 from app.database import Base, SessionLocal, engine
 from app.models import (
+    AppSetting,
     Challenge,
     Pattuglia,
     Prenotazione,
@@ -246,6 +247,12 @@ def reset_and_init_db(db=None):
                 )
                 db.add(unit_user)
         db.commit()
+
+        # --- App Settings ---
+        if not db.query(AppSetting).filter(AppSetting.key == "support_emails").first():
+            db.add(AppSetting(key="support_emails", value="tech@bestiale2026.ch"))
+            db.commit()
+            print("Default app settings created.")
 
         # Export Admin DB UI to data/credentials.txt is no longer needed or we can do it silently
 

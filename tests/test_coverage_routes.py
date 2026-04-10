@@ -93,7 +93,7 @@ def test_reject_prenotazione(client, session):
 
 def test_email_service_functions(monkeypatch):
     # Just call them to cover the branch where emails are sent or logged
-    monkeypatch.setenv("SENDGRID_API_KEY", "")  # Fallback to logging
+    monkeypatch.setenv("SMTP_PASSWORD", "")  # Force mock mode
 
     send_reservation_requested_email("test@test.com", "Lupi", "Base", "2026", "2026")
     send_reservation_approved_email("test@test.com", "Lupi", "Base", "2026", "2026")

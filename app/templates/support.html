@@ -4,13 +4,15 @@
 <div class="max-w-2xl mx-auto py-8">
     <div class="glass sm:rounded-lg overflow-hidden border-2 shadow-sm border-scout-100">
         <div class="p-6">
-            <h2 class="text-2xl font-black tracking-tight text-scout-800 mb-6">Contatta il Supporto</h2>
+            <h2 class="text-2xl font-black tracking-tight text-scout-800 mb-6">Contatta le équipes BeSTiale26</h2>
 
             {% if success %}
             <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 relative" role="alert">
-                <p class="text-sm font-medium text-green-700">La tua richiesta di supporto è stata inviata con successo. Il team Tech ti risponderà il prima possibile.</p>
+                <p class="text-sm font-medium text-green-700">La tua richiesta è stata inviata con successo. Le équipes
+                    ti risponderanno il prima possibile.</p>
                 <div class="mt-4">
-                    <a href="/" class="text-sm text-green-700 hover:text-green-800 font-bold underline">Torna alla dashboard</a>
+                    <a href="/" class="text-sm text-green-700 hover:text-green-800 font-bold underline">Torna alla
+                        dashboard</a>
                 </div>
             </div>
             {% else %}
@@ -22,7 +24,9 @@
             {% endif %}
 
             <div class="prose text-gray-600 mb-8 max-w-none text-sm">
-                <p>Compila il modulo sottostante per inoltrare una richiesta di supporto al team Tech. Verrai ricontattato all'indirizzo email associato al tuo account, se disponibile, oppure direttamente al Campo.</p>
+                <p>Compila il modulo sottostante per inoltrare una richiesta relativa alla BeSTiapp e alle sue funzioni.
+                    Verrai ricontattato all'indirizzo email associato al tuo account, se disponibile, oppure
+                    direttamente al Campo.</p>
             </div>
 
             <form action="/supporto" method="post" class="space-y-6">

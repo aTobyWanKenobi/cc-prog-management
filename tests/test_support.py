@@ -26,7 +26,7 @@ def test_get_support_page_authenticated(client, session):
     client.post("/login", data={"username": "testuser", "password": "password", "login_role": "unit"})
     response = client.get("/supporto")
     assert response.status_code == 200
-    assert "Contatta il Supporto" in response.text
+    assert "Contatta le" in response.text
 
 
 def test_post_support_ticket(client, session):

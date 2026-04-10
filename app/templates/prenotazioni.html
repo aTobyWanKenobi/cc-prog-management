@@ -19,7 +19,7 @@
     }
 
     .slot-selected {
-        box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+        box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1);
     }
 
     /* Custom Sliders */
@@ -36,10 +36,12 @@
         height: 24px;
         width: 24px;
         border-radius: 50%;
-        background: #0284c7; /* scout-600 */
+        background: #0284c7;
+        /* scout-600 */
         cursor: pointer;
-        margin-top: -8px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-top: -8px;
+        /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     input[type=range].slider-large::-webkit-slider-runnable-track {
@@ -56,7 +58,7 @@
         border-radius: 50%;
         background: #0284c7;
         cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         border: none;
     }
 
@@ -73,31 +75,10 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="terrainCalendar()">
 
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-extrabold text-scout-800">Calendario Terreni 🏕️</h1>
-
-        <!-- Filter Controls -->
-        <div class="flex space-x-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100 items-center">
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase">Data</label>
-                <input type="date" x-model="filterDate" @change="fetchAvailability()"
-                    class="border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
-            </div>
-            <div class="w-48">
-                <label class="block text-xs font-bold text-gray-400 uppercase">Orario: <span
-                        x-text="formatHour(filterStartHour)"></span> - <span x-text="formatHour(filterEndHour)"></span></label>
-                <div class="flex items-center space-x-4 mt-2">
-                    <input type="range" min="7" max="24" step="1" x-model.number="filterStartHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
-                    <input type="range" min="8" max="25" step="1" x-model.number="filterEndHour"
-                        @input="validateTime(); fetchAvailability()" class="w-full slider-large">
-                </div>
-            </div>
-        </div>
-    </div>
+    <h1 class="text-3xl font-extrabold text-scout-800 mb-6">Calendario Terreni 🏕️</h1>
 
     <!-- Map + Details Panel Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[450px]">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[550px]">
         <!-- Map Section -->
         <div class="lg:col-span-2 bg-white p-1 rounded-xl shadow-lg border border-gray-200 h-full relative">
             <div id="map" class="z-0"></div>
@@ -116,10 +97,42 @@
             </div>
         </div>
 
-        <!-- Details Panel (Photos + Description only) -->
+        <!-- Details Panel -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-full overflow-hidden">
 
-            <!-- Empty State -->
+            <!-- Filter Controls (always visible at top of panel) -->
+            <div class="p-4 border-b border-gray-100 shrink-0">
+                <p class="text-xs text-gray-500 mb-2">Filtra la mappa per data e fascia oraria.</p>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data</label>
+                        <input type="date" x-model="filterDate" @change="fetchAvailability()"
+                            class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Da</label>
+                        <select x-model.number="filterStartHour" @change="validateTime(); fetchAvailability()"
+                            class="border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                            <template x-for="h in 18" :key="h">
+                                <option :value="h + 6" x-text="formatHour(h + 6)"
+                                    :selected="filterStartHour === (h + 6)"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">A</label>
+                        <select x-model.number="filterEndHour" @change="validateTime(); fetchAvailability()"
+                            class="border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500">
+                            <template x-for="h in 18" :key="h">
+                                <option :value="h + 7" x-text="formatHour(h + 7)" :selected="filterEndHour === (h + 7)">
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State (no terrain selected) -->
             <div x-show="!selectedTerrain"
                 class="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 opacity-50" fill="none"
@@ -172,113 +185,114 @@
         </div>
     </div>
 
-    <!-- Calendar & Form Section -->
-    <div x-show="selectedTerrain" class="grid grid-cols-1 xl:grid-cols-4 gap-6 mt-6 items-start" style="display: none;">
-
-        <!-- Calendar Section -->
-        <div class="xl:col-span-3 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <!-- Calendar Section (full-width) -->
+    <div x-show="selectedTerrain" class="mt-6" style="display: none;">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-scout-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h3 class="font-bold text-scout-800">
                     Occupazione: <span x-text="selectedTerrain?.name"></span> (25 Lug - 08 Ago)
                 </h3>
                 <button @click="selectedTerrain = null" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            </div>
-            <div class="p-4 overflow-x-auto" @mouseup.window="endDrag()" @mousemove.window="onGlobalDrag($event)" @mouseleave="endDrag()">
-            <div
-                class="grid grid-cols-[auto_repeat(15,minmax(40px,1fr))] gap-px bg-gray-200 border border-gray-200 text-xs min-w-[700px]">
-                <!-- Header Row (Days) -->
-                <div class="bg-gray-50 p-1 sticky left-0 z-20"></div> <!-- Corner -->
-                <template x-for="(day, index) in calendarDays" :key="index">
-                    <div class="bg-gray-50 p-1 text-center font-bold text-gray-500" x-text="formatDay(day)">
-                    </div>
-                </template>
-
-                <!-- Rows (Hours) -->
-                <template x-for="step in 18" :key="step">
-                    <contents class="contents"> <!-- Fragment-like -->
-                        <div class="bg-gray-50 p-1 text-right text-gray-400 sticky left-0 z-10"
-                            x-text="((step + 6) % 24) + ':00'"></div>
-
-                        <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
-                            <div class="bg-white h-6 relative group border-white/50 border select-none transition-colors"
-                                :class="getSlotClass(day, step + 6)"
-                                :data-day="new Date(day).getTime()"
-                                :data-hour="step + 6"
-                                @mousedown.prevent="startDrag(day, step + 6)">
-
-                                <div class="absolute inset-0 overflow-hidden flex items-center px-1 pointer-events-none"
-                                     x-show="getSlotText(day, step + 6)">
-                                    <span class="text-[9px] font-bold text-white whitespace-nowrap truncate leading-none drop-shadow-md"
-                                          x-text="getSlotText(day, step + 6)">
-                                    </span>
-                                </div>
-                            </div>
+            <div class="p-4 overflow-x-auto" @mouseup.window="endDrag()" @mousemove.window="onGlobalDrag($event)"
+                @mouseleave="endDrag()">
+                <table class="w-full border-collapse text-xs" style="min-width: 700px;">
+                    <thead>
+                        <tr>
+                            <th class="bg-gray-50 p-1 border border-gray-200 sticky left-0 z-20 w-12"></th>
+                            <template x-for="(day, index) in calendarDays" :key="index">
+                                <th class="bg-gray-50 p-1 border border-gray-200 text-center">
+                                    <div class="text-[10px] text-gray-400 font-medium" x-text="getDayName(day)"></div>
+                                    <div class="font-bold text-gray-600" x-text="formatDay(day)"></div>
+                                </th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="step in 18" :key="step">
+                            <tr>
+                                <td class="bg-gray-50 p-1 text-right text-gray-400 border border-gray-200 sticky left-0 z-10 font-medium"
+                                    x-text="((step + 6) % 24) + ':00'"></td>
+                                <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
+                                    <td class="h-10 relative select-none transition-colors border border-gray-200 p-0"
+                                        :class="getSlotClass(day, step + 6)" :data-day="localDayTime(day)"
+                                        :data-hour="step + 6" :title="getSlotTooltip(day, step + 6)"
+                                        @mousedown.prevent="startDrag(day, step + 6)">
+                                        <div class="absolute inset-0 overflow-hidden flex items-center justify-center px-0.5 pointer-events-none"
+                                            x-show="getSlotText(day, step + 6)">
+                                            <span
+                                                class="text-[9px] font-bold text-white leading-tight drop-shadow-md text-center break-words line-clamp-2"
+                                                x-text="getSlotText(day, step + 6)">
+                                            </span>
+                                        </div>
+                                    </td>
+                                </template>
+                            </tr>
                         </template>
-                    </contents>
-                </template>
-            </div>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Booking Request Form (Units Only) -->
+        <!-- Booking Request Form (Units Only) - compact bar below calendar -->
         {% if user.role == 'unit' %}
-        <div class="xl:col-span-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden sticky top-6">
-            <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
-                <h3 class="font-bold text-blue-800">Richiedi Prenotazione</h3>
+        <div class="mt-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-blue-50 px-6 py-3 border-b border-gray-200 flex items-center">
+                <svg class="w-4 h-4 mr-2 opacity-70 text-blue-700" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
+                    </path>
+                </svg>
+                <h3 class="font-bold text-blue-800 text-sm">Richiedi Prenotazione</h3>
+                <span class="ml-3 text-xs text-blue-600">Trascina sul calendario per selezionare l'orario (max
+                    4h).</span>
             </div>
-            <div class="px-6 py-3 bg-blue-50/50 text-xs text-blue-800 border-b border-gray-100 flex items-center">
-                <svg class="w-4 h-4 mr-2 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-                Trascina sul calendario per selezionare l'orario (max 4h).
-            </div>
-            <form action="/prenotazioni" method="POST" class="p-6">
+            <form action="/prenotazioni" method="POST" class="p-4">
                 <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
-                <div class="space-y-4">
+                <input type="hidden" name="start_date" x-model="selectedStartDate">
+                <input type="hidden" name="start_hour" :value="selectedStartHour">
+                <input type="hidden" name="duration" :value="selectedDuration">
+                <div class="flex flex-wrap items-end gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Data Selezionata</label>
-                        <input type="date" name="start_date" x-model="selectedStartDate" required readonly
-                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Terreno</label>
+                        <p class="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5" x-text="selectedTerrain?.name"></p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
-                        <select name="start_hour" x-model="selectedStartHour" required readonly style="pointer-events: none;"
-                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
-                            <template x-for="h in 24" :key="h">
-                                <option :value="(h+6)%24 || 24" x-text="(h+6)%24 + ':00'" :selected="selectedStartHour === ((h+6)%24 || 24)"></option>
-                            </template>
-                        </select>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data</label>
+                        <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
+                            x-text="formatDateWithDay(selectedStartDate) || '—'"></p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Durata (ore)</label>
-                        <select name="duration" x-model="selectedDuration" required readonly style="pointer-events: none;"
-                            class="w-full border-gray-200 rounded-md text-sm bg-gray-50 text-gray-500 focus:ring-0">
-                            <option value="1" :selected="selectedDuration == 1">1 ora</option>
-                            <option value="2" :selected="selectedDuration == 2">2 ore</option>
-                            <option value="3" :selected="selectedDuration == 3">3 ore</option>
-                            <option value="4" :selected="selectedDuration == 4">4 ore</option>
-                        </select>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
+                        <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
+                            x-text="selectedStartHour ? formatHour(selectedStartHour) : '—'"></p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Note (Opzionale)</label>
-                        <textarea name="notes" rows="2" placeholder="Dettagli attività, numeri, richieste"
-                            class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500"></textarea>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Durata</label>
+                        <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
+                            x-text="selectedDuration + (selectedDuration == 1 ? ' ora' : ' ore')"></p>
                     </div>
-                </div>
-
-                <div x-show="isSelectionOverlappingPending()" class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800" style="display: none;">
-                    <strong>Attenzione:</strong> C'è già una richiesta pendente per questo orario, ma puoi comunque inviare la tua. Gli Admin valuteranno entrambe le richieste.
-                </div>
-
-                <div class="mt-6 flex flex-col space-y-3">
-                    <p class="text-sm text-gray-500 text-center">Terreno: <strong x-text="selectedTerrain?.name"></strong></p>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Note (opzionale)</label>
+                        <input type="text" name="notes" placeholder="Dettagli attività, numeri, richieste"
+                            class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500 py-1.5">
+                    </div>
                     <button type="submit" :disabled="!selectedStartDate || !selectedStartHour"
-                        class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-3 px-6 rounded-lg transition-colors shadow-md w-full">
+                        class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-2 px-6 rounded-lg transition-colors shadow-md whitespace-nowrap">
                         Invia Richiesta
                     </button>
+                </div>
+                <div x-show="isSelectionOverlappingPending()"
+                    class="mt-3 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800"
+                    style="display: none;">
+                    <strong>Attenzione:</strong> C'è già una richiesta pendente per questo orario, ma puoi comunque
+                    inviare la tua, le équipes valuteranno entrambe le richieste.
                 </div>
             </form>
         </div>
@@ -289,84 +303,115 @@
     <div class="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="bg-scout-50 px-6 py-4 border-b border-gray-200">
             <h3 class="font-bold text-scout-800">
-                {% if user.role == 'unit' %}Le Tue Prenotazioni{% else %}Tutte le Prenotazioni{% endif %}
+                {% if user.role == 'unit' %}Le tue prenotazioni{% else %}Tutte le prenotazioni{% endif %}
             </h3>
         </div>
         <div class="table-responsive">
             <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terreno</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Terreno</th>
                         {% if user.role in ['tech', 'admin'] %}
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unità</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unità
+                        </th>
                         {% endif %}
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inizio</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durata</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Inizio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Durata</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Azioni</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for res in user_reservations %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}
+                        </td>
                         {% if user.role in ['tech', 'admin'] %}
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ res.unita.name }}</td>
                         {% endif %}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m %H:%M') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.start_time.strftime('%d/%m
+                            %H:%M') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.end_time.strftime('%d/%m
+                            %H:%M') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.duration }}h</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if res.status == 'APPROVED' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅ Approvata</span>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅
+                                Approvata</span>
                             {% elif res.status == 'PENDING' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ In Attesa</span>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳
+                                In Attesa</span>
                             {% elif res.status == 'REJECTED' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">❌ Rifiutata</span>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">❌
+                                Rifiutata</span>
                             {% elif res.status == 'CANCELLED' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫 Annullata</span>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫
+                                Annullata</span>
                             {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{ res.status }}</span>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{
+                                res.status }}</span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {% if user.role == 'unit' and res.unita_id == user.unita_id %}
-                                <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST" class="flex items-center space-x-2">
-                                    <input type="text" name="notes" value="{{ res.notes or '' }}" placeholder="Aggiungi una nota..." class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
-                                    <button type="submit" class="text-blue-500 hover:text-blue-700" title="Salva Note">💾</button>
-                                </form>
+                            <form action="/prenotazioni/update-notes/{{ res.id }}" method="POST"
+                                class="flex items-center space-x-2">
+                                <input type="text" name="notes" value="{{ res.notes or '' }}"
+                                    placeholder="Aggiungi una nota..."
+                                    class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
+                                <button type="submit" class="text-blue-500 hover:text-blue-700"
+                                    title="Salva Note">💾</button>
+                            </form>
                             {% else %}
-                                {{ res.notes or '-' }}
+                            {{ res.notes or '-' }}
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             {% if res.status == 'PENDING' %}
-                                {% if user.role == 'unit' %}
-                                <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
-                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors" onclick="return confirm('Annullare questa prenotazione?')">
-                                        Annulla
-                                    </button>
-                                </form>
-                                {% elif user.role in ['tech', 'admin'] %}
-                                <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
-                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded mr-1 transition-colors">
-                                        ✅ Approva
-                                    </button>
-                                </form>
-                                <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
-                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors" onclick="return confirm('Rifiutare questa prenotazione?')">
-                                        ❌ Rifiuta
-                                    </button>
-                                </form>
-                                {% endif %}
+                            {% if user.role == 'unit' %}
+                            <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit"
+                                    class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
+                                    onclick="return confirm('Annullare questa prenotazione?')">
+                                    Annulla
+                                </button>
+                            </form>
+                            {% elif user.role in ['tech', 'admin'] %}
+                            <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit"
+                                    class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded mr-1 transition-colors">
+                                    ✅ Approva
+                                </button>
+                            </form>
+                            <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit"
+                                    class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                                    onclick="return confirm('Rifiutare questa prenotazione?')">
+                                    ❌ Rifiuta
+                                </button>
+                            </form>
+                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">Nessuna prenotazione trovata.</td>
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-400">Nessuna prenotazione
+                            trovata.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -557,6 +602,19 @@
                 return date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth() + 1).toString().padStart(2, '0');
             },
 
+            getDayName(date) {
+                const days = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+                return days[date.getDay()];
+            },
+
+            formatDateWithDay(dateStr) {
+                if (!dateStr) return null;
+                const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+                const parts = dateStr.split('-');
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return days[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
+            },
+
             formatHour(h) {
                 if (h >= 24) {
                     return ('0' + (h - 24)).slice(-2) + ':00';
@@ -572,9 +630,9 @@
 
                 let isPending = this.isSlotPending(day, hour);
                 if (isPending) {
-                     let isSelected = this.isSlotSelected(day, hour);
-                     if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
-                     return 'bg-amber-400 border-amber-500 opacity-90 cursor-pointer hover:bg-amber-300';
+                    let isSelected = this.isSlotSelected(day, hour);
+                    if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+                    return 'bg-amber-400 border-amber-500 opacity-90 cursor-pointer hover:bg-amber-300';
                 }
 
                 let isSelected = this.isSlotSelected(day, hour);
@@ -608,7 +666,7 @@
             isSelectionOverlappingPending() {
                 if (!this.selectedStartDate) return false;
                 let parts = this.selectedStartDate.split('-');
-                let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+                let selTime = new Date(parts[0], parts[1] - 1, parts[2]).getTime();
 
                 let startH = parseInt(this.selectedStartHour);
                 let endH = startH + parseInt(this.selectedDuration) - 1;
@@ -620,14 +678,31 @@
             },
 
             formatDateForInput(date) {
+                const d = new Date(date);
                 const z = n => ('0' + n).slice(-2);
-                return date.getFullYear() + '-' + z(date.getMonth() + 1) + '-' + z(date.getDate());
+                return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+            },
+
+            parseDateToLocalTime(dateStr) {
+                // Parse 'YYYY-MM-DD' string into local midnight timestamp,
+                // avoiding UTC vs local timezone mismatch.
+                const parts = dateStr.split('-');
+                return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+            },
+
+            localDayTime(day) {
+                // Convert any date representation to local midnight timestamp.
+                // Used in data-day attributes and all day comparisons.
+                const d = day instanceof Date ? day : new Date(day);
+                return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             },
 
             startDrag(day, hour) {
                 if (this.isSlotApproved(day, hour)) return;
                 this.isDragging = true;
-                this.dragStartDay = new Date(day).getTime();
+                // Use local midnight timestamp for consistent day matching
+                const d = day instanceof Date ? day : new Date(day);
+                this.dragStartDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
                 this.dragStartHour = hour;
                 this.dragCurrentHour = hour;
             },
@@ -674,7 +749,15 @@
             },
 
             isSlotSelected(day, hour) {
-                const dayTime = typeof day === 'number' ? day : new Date(day).getTime();
+                // Normalize day to local midnight timestamp for consistent comparison
+                let dayTime;
+                if (typeof day === 'number') {
+                    dayTime = day;
+                } else if (day instanceof Date) {
+                    dayTime = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+                } else {
+                    dayTime = new Date(day).getTime();
+                }
 
                 if (this.isDragging && dayTime === this.dragStartDay) {
                     let minH = Math.min(this.dragStartHour, this.dragCurrentHour);
@@ -684,12 +767,11 @@
                 }
 
                 if (!this.isDragging && this.selectedStartDate) {
-                    let parts = this.selectedStartDate.split('-');
-                    let selTime = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+                    let selTime = this.parseDateToLocalTime(this.selectedStartDate);
 
                     if (dayTime === selTime) {
-                         const maxH = this.selectedStartHour + parseInt(this.selectedDuration) - 1;
-                         return hour >= this.selectedStartHour && hour <= maxH;
+                        const maxH = this.selectedStartHour + parseInt(this.selectedDuration) - 1;
+                        return hour >= this.selectedStartHour && hour <= maxH;
                     }
                 }
 
@@ -708,12 +790,33 @@
                 });
 
                 if (res && res.status !== 'CANCELLED' && res.status !== 'REJECTED') {
-                    let rStart = new Date(res.start);
-                    if (rStart.getHours() === hour) {
-                        let rEnd = new Date(res.end);
-                        let duration = (rEnd.getTime() - rStart.getTime()) / 3600000;
-                        return `${res.unit_name} (${duration}h)`;
+                    if (res.status === 'APPROVED') {
+                        return res.unit_name;
+                    } else {
+                        return '⏳';
                     }
+                }
+                return '';
+            },
+
+            getSlotTooltip(day, hour) {
+                if (!this.selectedTerrain) return '';
+                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
+                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+
+                let res = this.selectedTerrain.reservations.find(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (rStart < slotEnd && rEnd > slotStart);
+                });
+
+                if (res && res.status !== 'CANCELLED' && res.status !== 'REJECTED') {
+                    let rStart = new Date(res.start);
+                    let rEnd = new Date(res.end);
+                    let hStart = rStart.getHours() + ':00';
+                    let hEnd = rEnd.getHours() + ':00';
+                    let status = res.status === 'PENDING' ? ' (in attesa)' : '';
+                    return `${res.unit_name} \u2014 ${hStart}-${hEnd}${status}`;
                 }
                 return '';
             }

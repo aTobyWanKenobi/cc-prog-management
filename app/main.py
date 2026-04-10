@@ -1,5 +1,13 @@
 import asyncio
 import os
+
+# Load .env file for local development (ignored in production if file doesn't exist)
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(override=True)
+except ImportError:  # pragma: no cover
+    pass  # python-dotenv not installed, rely on system env vars
 import secrets
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta

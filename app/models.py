@@ -137,3 +137,10 @@ class Prenotazione(Base):
 
     terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
     unita: Mapped["Unita"] = relationship()
+
+
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[str] = mapped_column(default="")
