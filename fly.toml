@@ -18,3 +18,7 @@ primary_region = "fra"
 
 [env]
   DATABASE_URL = "sqlite:////data/camp.db"
+
+[vm]
+  size = "shared-cpu-1x"
+  memory = "512mb"
