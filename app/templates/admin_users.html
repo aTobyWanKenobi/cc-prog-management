@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="px-4 py-6 sm:px-0">
+<div class="px-4 py-6 sm:px-0" x-data="{ editUser: null, showPassword: true }">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-extrabold text-scout-800 tracking-tight">Amministrazione</h1>
     </div>
@@ -11,7 +11,7 @@
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <a href="/admin"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Dashboard & Log
+                Pannello & Log
             </a>
             <a href="/admin/pattuglie"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
@@ -32,47 +32,167 @@
         </nav>
     </div>
 
+    {% if new_user_password %}
+    <div x-show="showPassword" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 relative">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <span class="text-yellow-400 text-xl font-bold">⚠️</span>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    Utente creato con successo: <strong class="text-scout-800">{{ new_username }}</strong>
+                </p>
+                <p class="text-sm text-yellow-700 mt-2 font-medium">
+                    Password generata: <code class="bg-white px-2 py-1 rounded border border-yellow-300 mt-1 inline-block text-lg font-mono">{{ new_user_password }}</code>
+                </p>
+                <p class="text-xs text-yellow-600 mt-2 font-bold">
+                    ATTENZIONE: Copia questa password ORA. Questa è l'UNICA volta che verrà mostrata!
+                </p>
+            </div>
+        </div>
+        <button @click="showPassword = false" class="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800 font-bold">✕</button>
+    </div>
+    {% endif %}
+
+    <!-- Create User Form -->
+    <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500 mb-8">
+        <h2 class="text-xl font-bold mb-4 text-scout-800">Nuovo Utente</h2>
+        <form action="/admin/users" method="post" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" name="username" placeholder="Username" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+
+                <input type="email" name="email" placeholder="Email"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+
+                <select name="role" required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                    <option value="unit">Unit (Reparto/Posto)</option>
+                    <option value="tech">Tech (Sportello)</option>
+                    <option value="admin">Admin (Direzione)</option>
+                </select>
+
+                <select name="unita_id"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
+                    <option value="">Nessuna Unità (Solo Tech/Admin)</option>
+                    {% for u in unita %}
+                    <option value="{{ u.id }}">{{ u.name }} ({{ u.tipo }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
+                Crea Utente
+            </button>
+        </form>
+    </div>
+
     <!-- Users List -->
-    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+    <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg table-responsive">
+        <table class="min-w-full divide-y divide-gray-200 sticky-col-1">
             <thead class="bg-scout-100">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">
-                        Username</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Ruolo
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Unità
-                        Collegata</th>
-                    <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">Nuova
-                        Password</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Username</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider hide-on-mobile">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Ruolo</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-scout-800 uppercase tracking-wider">Unità Collegata</th>
+                    <th class="px-6 py-3 text-right text-xs font-bold text-scout-800 uppercase tracking-wider">Azioni</th>
                 </tr>
             </thead>
             <tbody class="bg-white/60 divide-y divide-gray-200">
                 {% for u in users %}
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ u.username }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hide-on-mobile">{{ u.email or '-' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            {% if u.role == 'admin' %}bg-red-100 text-red-800{% elif u.role == 'tech' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if u.role == 'admin' %}bg-red-100 text-red-800{% elif u.role == 'tech' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
                             {{ u.role }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {% if u.unita %}{{ u.unita.name }}{% else %}-{% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <form action="/admin/users/{{ u.id }}/password" method="post"
-                            class="flex justify-end items-center space-x-2">
-                            <input type="text" name="password" placeholder="Nuova Password" required
-                                class="w-32 rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-xs p-1">
-                            <button type="submit" class="text-scout-600 hover:text-scout-900 font-bold">Salva</button>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end items-center space-x-2">
+                        <button @click="editUser = { id: {{ u.id }}, username: '{{ u.username }}', email: '{{ u.email or '' }}', role: '{{ u.role }}', unita_id: '{{ u.unita_id or '' }}' }" type="button" class="text-blue-600 hover:text-blue-900 font-bold border border-blue-600 px-2 py-1 rounded text-xs mr-2">Modifica</button>
+
+                        <form action="/admin/users/{{ u.id }}/password" method="post" class="flex items-center space-x-1 mr-2 hide-on-mobile">
+                            <input type="text" name="password" placeholder="Solo se reset..." required
+                                class="w-24 rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-xs p-1">
+                            <button type="submit" class="text-scout-600 hover:text-scout-900 font-bold text-xs" title="Reset PW">Reset</button>
+                        </form>
+
+                        <form action="/admin/users/{{ u.id }}/delete" method="post"
+                            onsubmit="return confirm('Eliminare utente {{ u.username }}?');">
+                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold text-xs">❌</button>
                         </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div x-show="editUser" style="display: none;" class="fixed inset-0 z-[500] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div x-show="editUser" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="editUser = null" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal panel -->
+            <div x-show="editUser" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                <form :action="'/admin/users/' + editUser.id + '/edit'" method="post">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title" x-text="'Modifica Utente: ' + editUser.username"></h3>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700">Username</label>
+                                        <input type="text" name="username" x-model="editUser.username" required
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2 bg-white text-gray-900" style="-webkit-text-fill-color: initial;">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700">Email</label>
+                                        <input type="email" name="email" x-model="editUser.email"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2 bg-white text-gray-900" style="-webkit-text-fill-color: initial;">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700">Ruolo</label>
+                                        <select name="role" x-model="editUser.role" required
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2 bg-white text-gray-900">
+                                            <option value="unit">Unit (Reparto/Posto)</option>
+                                            <option value="tech">Tech (Sportello)</option>
+                                            <option value="admin">Admin (Direzione)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700">Unità Collegata</label>
+                                        <select name="unita_id" x-model="editUser.unita_id"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2 bg-white text-gray-900">
+                                            <option value="">Nessuna Unità</option>
+                                            {% for u in unita %}
+                                            <option value="{{ u.id }}">{{ u.name }} ({{ u.tipo }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-scout-600 text-base font-medium text-white hover:bg-scout-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-scout-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Salva
+                        </button>
+                        <button type="button" @click="editUser = null" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-scout-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Annulla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

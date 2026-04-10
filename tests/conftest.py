@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -6,6 +8,9 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+
+# Ensure tests never send real emails
+os.environ["SMTP_PASSWORD"] = ""
 
 
 @pytest.fixture(name="session")

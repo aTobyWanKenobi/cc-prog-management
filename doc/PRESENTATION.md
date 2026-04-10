@@ -1,4 +1,4 @@
-# BeSTiale Esplo ⛺
+# BeSTiapp ⛺
 
 **Sistema di Gestione e Coordinamento Campo Scout**
 

@@ -216,7 +216,9 @@ def write_terreni_csv(polygons: list[Polygon], output_path: str) -> None:
     """Write polygons to terreni.csv format."""
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Name", "Tags", "CenterLat", "CenterLon", "Polygon", "Description", "ImageUrls"])
+        writer.writerow(
+            ["Name", "Tags", "CenterLat", "CenterLon", "Polygon", "Description", "ImageUrls", "TipoAccesso"]
+        )
 
         for poly in polygons:
             # Generate random tags (1 or 2)
@@ -238,6 +240,7 @@ def write_terreni_csv(polygons: list[Polygon], output_path: str) -> None:
                     json.dumps(poly.coordinates),
                     desc,
                     json.dumps(images),
+                    "entrambi",
                 ]
             )
 
@@ -296,6 +299,7 @@ Valid tags for terreni: SPORT, CERIMONIA, NOTTURNO, BIVACCO
                             json.dumps(poly.coordinates),
                             poly.description,
                             "[]",
+                            "entrambi",
                         ]
                     )
             print(f"\n[OK] Appended {len(polygons)} terrains to: {args.output}")

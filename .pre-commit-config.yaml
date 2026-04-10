@@ -28,3 +28,9 @@ repos:
         entry: uv run deptry .
         language: system
         pass_filenames: false
+
+      - id: uat-tests
+        name: uat-tests
+        entry: uv run pytest tests/e2e --no-cov -o "addopts="
+        language: system
+        pass_filenames: false
