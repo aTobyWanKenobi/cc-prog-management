@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth import get_admin_user, get_authenticated_user, get_tech_user
+from app.auth import get_admin_user, get_authenticated_user
 from app.database import get_db
 from app.email_service import (
     get_support_emails,
@@ -81,8 +81,8 @@ async def prenotazioni_page(
             .order_by(Prenotazione.start_time)
             .all()
         )
-    elif user.role in ["tech", "admin"]:
-        # Tech/admin see all reservations
+    elif user.role == "admin":
+        # Admin sees all reservations
         user_reservations = (
             db.query(Prenotazione)
             .options(joinedload(Prenotazione.terreno), joinedload(Prenotazione.unita))
@@ -118,38 +118,54 @@ async def cancel_prenotazione(
 async def create_prenotazione(
     terreno_id: int = Form(...),
     start_date: str = Form(...),
-    start_hour: int = Form(...),
-    duration: int = Form(...),
+    start_slot: int = Form(...),
+    duration_slots: int = Form(...),
     notes: str | None = Form(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_authenticated_user),
 ):
-    if user.role != "unit" or not user.unita_id:
-        raise HTTPException(status_code=403, detail="Solo le unità possono prenotare terreni.")
+    if user.role not in ["unit", "admin"]:
+        raise HTTPException(status_code=403, detail="Solo le unità o gli admin possono prenotare terreni.")
+
+    if user.role == "admin":
+        bestiale_unit = db.query(Unita).filter(Unita.name == "BeSTiale").first()
+        if not bestiale_unit:
+            bestiale_unit = Unita(name="BeSTiale", tipo="staff", email="admin@bestiale2026.ch")
+            db.add(bestiale_unit)
+            db.commit()
+            db.refresh(bestiale_unit)
+        unita_id_to_use = bestiale_unit.id
+        status_to_use = "APPROVED"
+        tipo_unita = "staff"
+    else:
+        if not user.unita_id:
+            raise HTTPException(status_code=403, detail="Utente senza unità.")
+        unita_id_to_use = user.unita_id
+        status_to_use = "PENDING"
+        tipo_unita = user.unita.tipo.lower() if user.unita else None
 
     terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
     if not terreno:
         raise HTTPException(status_code=404, detail="Terreno non trovato.")
-
-    tipo_unita = user.unita.tipo.lower() if user.unita else None
     if tipo_unita and terreno.tipo_accesso != "entrambi" and terreno.tipo_accesso != tipo_unita:
         raise HTTPException(
             status_code=403, detail=f"Questo terreno non è disponibile per la tua branca ({tipo_unita.capitalize()})."
         )
 
-    if start_hour < 7 or start_hour + duration > 25:
+    if start_slot < 0 or start_slot + duration_slots > 36:
         raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
 
-    if duration < 1 or duration > 4:
-        raise HTTPException(status_code=400, detail="Durata deve essere tra 1 e 4 ore.")
+    if duration_slots < 1 or duration_slots > 8:
+        raise HTTPException(status_code=400, detail="Durata deve essere tra 30 minuti e 4 ore.")
 
     try:
         base_date = datetime.strptime(start_date, "%Y-%m-%d")
-        start_time = base_date + timedelta(hours=start_hour)
+        start_time = base_date + timedelta(hours=7, minutes=30 * start_slot)
     except ValueError:
         raise HTTPException(status_code=400, detail="Data o ora non valida.") from None
 
-    end_time = start_time + timedelta(hours=duration)
+    end_time = start_time + timedelta(minutes=30 * duration_slots)
+    duration_float = duration_slots * 0.5
 
     # Check for overlapping reservations on the same terrain
     overlap = (
@@ -168,27 +184,28 @@ async def create_prenotazione(
 
     new_prenotazione = Prenotazione(
         terreno_id=terreno_id,
-        unita_id=user.unita_id,
+        unita_id=unita_id_to_use,
         start_time=start_time,
         end_time=end_time,
-        duration=duration,
+        duration=duration_float,
         notes=notes,
-        status="PENDING",
+        status=status_to_use,
     )
     db.add(new_prenotazione)
     db.commit()
 
     # Send email notification
-    terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
-    unita = db.query(Unita).filter(Unita.id == user.unita_id).first()
-    if terreno and unita:
-        send_reservation_requested_email(
-            unit_email=unita.email,
-            unit_name=unita.name,
-            terrain_name=terreno.name,
-            start_time=start_time.strftime("%d/%m %H:%M"),
-            end_time=end_time.strftime("%d/%m %H:%M"),
-        )
+    if user.role != "admin":
+        terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
+        unita = db.query(Unita).filter(Unita.id == unita_id_to_use).first()
+        if terreno and unita:
+            send_reservation_requested_email(
+                unit_email=unita.email,
+                unit_name=unita.name,
+                terrain_name=terreno.name,
+                start_time=start_time.strftime("%d/%m %H:%M"),
+                end_time=end_time.strftime("%d/%m %H:%M"),
+            )
 
     return RedirectResponse(url="/prenotazioni?success=1", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -214,7 +231,7 @@ async def update_prenotazione_notes(
 
 
 @router.get("/input", response_class=HTMLResponse)
-async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_tech_user)):
+async def input_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     pattuglie = db.query(Pattuglia).join(Unita).filter(Unita.tipo == "Reparto").order_by(Pattuglia.name).all()
     challenges = db.query(Challenge).order_by(Challenge.name).all()
     return templates.TemplateResponse(
@@ -339,7 +356,7 @@ async def register_completion(
     pattuglia_id: int = Form(...),
     challenge_id: int = Form(...),
     db: Session = Depends(get_db),
-    user: User = Depends(get_tech_user),
+    user: User = Depends(get_admin_user),
 ):
     # Check if already completed
     existing = (
@@ -378,7 +395,7 @@ async def register_manual_adjustment(
     manual_points: int = Form(...),
     manual_note: str = Form(...),
     db: Session = Depends(get_db),
-    user: User = Depends(get_tech_user),
+    user: User = Depends(get_admin_user),
 ):
     pattuglia = db.query(Pattuglia).filter(Pattuglia.id == pattuglia_id).first()
     if not pattuglia:
@@ -529,7 +546,8 @@ async def get_terreni_availability(
                         "end": r.end_time.isoformat(),
                         "status": r.status,
                         "unit_name": r.unita.name,
-                        "notes": r.notes if (user.role in ["admin", "tech"] or user.unita_id == r.unita_id) else "",
+                        "unit_type": getattr(r.unita, "tipo", ""),
+                        "notes": r.notes if (user.role == "admin" or user.unita_id == r.unita_id) else "",
                     }
                     for r in reservations
                 ],

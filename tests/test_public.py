@@ -7,7 +7,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def setup_tech_user(session):
     hashed = pwd_context.hash("tech")
-    user = User(username="prog", password_hash=hashed, role="tech")
+    user = User(username="prog", password_hash=hashed, role="admin")
     session.add(user)
     session.commit()
     return user
@@ -36,14 +36,14 @@ def test_ranking_page_access(client, session):
 
     # Auth user
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
     response = client.get("/")
     assert response.status_code == 200
 
 
 def test_complete_challenge_flow(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
     p, c = setup_basic_game_data(session)
 
     # 1. Complete
@@ -70,7 +70,7 @@ def test_complete_challenge_flow(client, session):
 
 def test_ranking_order(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
 
     u = Unita(name="U1", sottocampo="S1")
     session.add(u)
@@ -93,7 +93,7 @@ def test_ranking_order(client, session):
 def test_export_ranking_permission(client, session):
     # Tech can export
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
     response = client.get("/export/ranking")
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
@@ -122,7 +122,7 @@ def test_export_ranking_permission(client, session):
 def test_other_public_pages(client, session):
     # Setup tech user for input pages
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
 
     # Prenotazioni
     response = client.get("/prenotazioni")
@@ -132,8 +132,7 @@ def test_other_public_pages(client, session):
     response = client.get("/input")
     assert response.status_code == 200
 
-    # Gestione Terreni requires admin now, so don't test it for tech here
-    # (Tested separately in test_terreni.py)
+    # Gestione Terreni requires admin — tested in test_terreni.py
 
     # Timeline
     response = client.get("/timeline")
@@ -142,7 +141,7 @@ def test_other_public_pages(client, session):
 
 def test_ranking_filter(client, session):
     setup_tech_user(session)
-    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "staff"})
+    client.post("/login", data={"username": "prog", "password": "tech", "login_role": "direzione"})
 
     u1 = Unita(name="U_Filter1", sottocampo="Nord")
     u2 = Unita(name="U_Filter2", sottocampo="Sud")

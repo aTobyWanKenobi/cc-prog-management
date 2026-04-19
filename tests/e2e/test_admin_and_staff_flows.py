@@ -40,10 +40,10 @@ def test_admin_flow_user_crud(page: Page, base_url):
 
 
 @pytest.mark.skip(reason="Needs proper DB seeding and async port binding")
-def test_tech_flow_gestione_terreni(page: Page, base_url):
+def test_admin_flow_gestione_terreni(page: Page, base_url):
     # Setup login
     page.goto(f"{base_url}/login")
-    page.fill("input[name='username']", "staff")
+    page.fill("input[name='username']", "admin")
     page.fill("input[name='password']", "password")
     page.click("button[type='submit']")
 

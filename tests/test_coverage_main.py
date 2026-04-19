@@ -17,19 +17,6 @@ def test_login_invalid_posto(client, session):
     assert "L&#39;unità non è un Posto" in response.text
 
 
-def test_login_invalid_staff(client, session):
-    # Tests line 79
-    user = User(
-        username="fake_staff_user",
-        password_hash="$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU",
-        role="unit",
-    )
-    session.add(user)
-    session.commit()
-    response = client.post("/login", data={"username": "fake_staff_user", "password": "god", "login_role": "staff"})
-    assert "Non sei autorizzato" in response.text
-
-
 def test_password_reset_page(client):
     # Tests line 110
     response = client.get("/password-reset")

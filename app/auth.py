@@ -79,16 +79,8 @@ def get_authenticated_user(user: User | None = Depends(get_current_user)):
 
 
 def get_unit_user(user: User = Depends(get_authenticated_user)):
-    # Unit user or higher (Tech, Admin)
-    # Actually, unit pages are accessible to everyone logged in?
-    # The requirement says "These users will get access to the public area".
-    # So basically any logged in user.
-    return user
-
-
-def get_tech_user(user: User = Depends(get_authenticated_user)):
-    if user.role not in ["tech", "admin"]:
-        raise HTTPException(status_code=403, detail="Not enough privileges")
+    # Unit users (reparto/posto) get access to the public area.
+    # Any logged-in user qualifies.
     return user
 
 

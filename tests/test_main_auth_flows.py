@@ -7,24 +7,32 @@ MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFi
 
 
 def test_login_role_validation(client, session):
-    # Create tech user
-    tech_user = User(username="tech_guy", password_hash=MOCK_HASH, role="tech")
-    session.add(tech_user)
+    # Create admin user
+    admin_user = User(username="admin_guy", password_hash=MOCK_HASH, role="admin")
+    session.add(admin_user)
     session.commit()
 
-    # Try to login as unit but role is tech -> fail
-    response = client.post("/login", data={"username": "tech_guy", "password": "god", "login_role": "reparto"})
+    # Try to login as unit but role is admin -> fail
+    response = client.post("/login", data={"username": "admin_guy", "password": "god", "login_role": "reparto"})
     assert response.status_code == 200
     assert "un Reparto Esploratori" in response.text
 
-    # Try to login as direzione but role is tech -> fail
-    response = client.post("/login", data={"username": "tech_guy", "password": "god", "login_role": "direzione"})
+    # Try to login as posto but role is admin -> fail
+    response = client.post("/login", data={"username": "admin_guy", "password": "god", "login_role": "posto"})
+    assert response.status_code == 200
+    assert "un Posto Pionieri" in response.text
+
+    # Create a unit user and try to login as direzione -> fail
+    unit_user = User(username="unit_guy", password_hash=MOCK_HASH, role="unit")
+    session.add(unit_user)
+    session.commit()
+    response = client.post("/login", data={"username": "unit_guy", "password": "god", "login_role": "direzione"})
     assert response.status_code == 200
     assert "Non sei autorizzato" in response.text
 
-    # Try to login as tech -> auth success and redirect
+    # Try to login as direzione -> auth success and redirect
     response = client.post(
-        "/login", data={"username": "tech_guy", "password": "god", "login_role": "staff"}, follow_redirects=False
+        "/login", data={"username": "admin_guy", "password": "god", "login_role": "direzione"}, follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == "/prenotazioni"

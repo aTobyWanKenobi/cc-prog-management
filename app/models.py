@@ -131,7 +131,7 @@ class Prenotazione(Base):
     unita_id: Mapped[int] = mapped_column(ForeignKey("unita.id"))
     start_time: Mapped[datetime] = mapped_column()
     end_time: Mapped[datetime] = mapped_column()
-    duration: Mapped[int] = mapped_column()  # Hours (1-4)
+    duration: Mapped[float] = mapped_column()  # Hours (0.5 to 4.0)
     status: Mapped[str] = mapped_column(default="PENDING")  # PENDING, APPROVED, REJECTED, CANCELLED
     notes: Mapped[str | None] = mapped_column(nullable=True)
 

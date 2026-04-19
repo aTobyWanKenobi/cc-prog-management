@@ -36,14 +36,14 @@ def test_login_admin_db(page: Page, live_server: str):
     expect(page.locator("text=Amministrazione")).to_be_visible()
 
 
-def test_login_admin_sportello(page: Page, live_server: str):
+def test_admin_can_access_input(page: Page, live_server: str):
     """
-    Test the happy path for Admin Sportello (tech).
+    Test that an admin user can access the /input (Gestione Sfide) page.
     """
     page.goto(f"{live_server}/login")
-    page.click("button:has-text('Staff')")
-    page.fill('input[name="username"]', "prog")
-    page.fill('input[name="password"]', "esplo")
+    page.click("button:has-text('Admin')")
+    page.fill('input[name="username"]', "admin")
+    page.fill('input[name="password"]', "admin")
     page.click('button[type="submit"]')
 
     # Check admin is logged in (goes to /prenotazioni)
