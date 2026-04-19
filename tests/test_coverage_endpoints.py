@@ -74,7 +74,7 @@ def test_public_remaining_endpoints(client, session):
     tech = User(
         username="tech_endpoint",
         password_hash="$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU",
-        role="tech",
+        role="admin",
     )
     u = Unita(name="Lupi Public", tipo="Reparto")
     patt = Pattuglia(name="Pattuglia Public", capo_pattuglia="Test", unita=u)
@@ -100,7 +100,7 @@ def test_public_remaining_endpoints(client, session):
     client.get("/timeline")
 
     # Login
-    client.post("/login", data={"username": "tech_endpoint", "password": "god", "login_role": "staff"})
+    client.post("/login", data={"username": "tech_endpoint", "password": "god", "login_role": "direzione"})
 
     client.get("/")
     client.get("/prenotazioni")
@@ -112,17 +112,17 @@ def test_public_remaining_endpoints(client, session):
     client.post(
         "/prenotazioni",
         data={
-            "unita_id": str(u.id),
             "terreno_id": str(t.id),
-            "start_time": datetime.now().strftime("%Y-%m-%dT%H:%M"),
-            "end_time": (datetime.now() + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M"),
+            "start_date": "2026-07-25",
+            "start_slot": "6",
+            "duration_slots": "4",
             "notes": "test",
         },
         follow_redirects=False,
     )
     client.post(
         "/prenotazioni",
-        data={"unita_id": "invalid", "terreno_id": str(t.id), "start_time": "", "end_time": ""},
+        data={"terreno_id": str(t.id), "start_date": "invalid", "start_slot": "6", "duration_slots": "4"},
         follow_redirects=False,
     )  # Validation branch
 

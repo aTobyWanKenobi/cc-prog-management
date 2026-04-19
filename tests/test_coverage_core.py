@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from jose import jwt
 
-from app.auth import ALGORITHM, SECRET_KEY, get_admin_user, get_current_user, get_tech_user, get_unit_user
+from app.auth import ALGORITHM, SECRET_KEY, get_admin_user, get_current_user, get_unit_user
 from app.database import get_db
 from app.models import TerrenoCategoria, User
 
@@ -36,15 +36,8 @@ def test_get_unit_user():
     assert get_unit_user(user) == user
 
 
-def test_get_tech_user_fails():
-    user = User(username="test", role="unit")
-    with pytest.raises(HTTPException) as exc:
-        get_tech_user(user)
-    assert exc.value.status_code == 403
-
-
 def test_get_admin_user_fails():
-    user = User(username="test", role="tech")
+    user = User(username="test", role="unit")
     with pytest.raises(HTTPException) as exc:
         get_admin_user(user)
     assert exc.value.status_code == 403

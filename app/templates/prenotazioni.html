@@ -206,7 +206,7 @@
                         <tr>
                             <th class="bg-gray-50 p-1 border border-gray-200 sticky left-0 z-20 w-12"></th>
                             <template x-for="(day, index) in calendarDays" :key="index">
-                                <th class="bg-gray-50 p-1 border border-gray-200 text-center">
+                                <th class="bg-gray-50 p-1 border border-gray-200 text-center w-10 overflow-hidden">
                                     <div class="text-[10px] text-gray-400 font-medium" x-text="getDayName(day)"></div>
                                     <div class="font-bold text-gray-600" x-text="formatDay(day)"></div>
                                 </th>
@@ -214,20 +214,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="step in 18" :key="step">
+                        <template x-for="slotIdx in 36" :key="slotIdx">
                             <tr>
-                                <td class="bg-gray-50 p-1 text-right text-gray-400 border border-gray-200 sticky left-0 z-10 font-medium"
-                                    x-text="((step + 6) % 24) + ':00'"></td>
+                                <td class="bg-gray-50 p-1 text-right text-gray-400 border border-gray-200 sticky left-0 z-10 font-medium text-[10px]"
+                                    x-text="formatTimeFromSlot(slotIdx - 1)"></td>
                                 <template x-for="(day, dayIdx) in calendarDays" :key="dayIdx">
-                                    <td class="h-10 relative select-none transition-colors border border-gray-200 p-0"
-                                        :class="getSlotClass(day, step + 6)" :data-day="localDayTime(day)"
-                                        :data-hour="step + 6" :title="getSlotTooltip(day, step + 6)"
-                                        @mousedown.prevent="startDrag(day, step + 6)">
-                                        <div class="absolute inset-0 overflow-hidden flex items-center justify-center px-0.5 pointer-events-none"
-                                            x-show="getSlotText(day, step + 6)">
+                                    <td class="h-6 overflow-hidden relative select-none transition-colors border border-gray-200 p-0"
+                                        :class="getSlotClass(day, slotIdx - 1)" :data-day="localDayTime(day)"
+                                        :data-slot="slotIdx - 1" :title="getSlotTooltip(day, slotIdx - 1)"
+                                        @mousedown.prevent="startDrag(day, slotIdx - 1)">
+                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                                             <span
-                                                class="text-[9px] font-bold text-white leading-tight drop-shadow-md text-center break-words line-clamp-2"
-                                                x-text="getSlotText(day, step + 6)">
+                                                class="text-[8px] font-bold text-white leading-none drop-shadow-md truncate max-w-full px-0.5"
+                                                x-show="getSlotText(day, slotIdx - 1)"
+                                                x-text="getSlotText(day, slotIdx - 1)">
                                             </span>
                                         </div>
                                     </td>
@@ -240,7 +240,7 @@
         </div>
 
         <!-- Booking Request Form (Units Only) - compact bar below calendar -->
-        {% if user.role == 'unit' %}
+        {% if user.role in ['unit', 'admin'] %}
         <div class="mt-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-blue-50 px-6 py-3 border-b border-gray-200 flex items-center">
                 <svg class="w-4 h-4 mr-2 opacity-70 text-blue-700" fill="none" stroke="currentColor"
@@ -256,8 +256,8 @@
             <form action="/prenotazioni" method="POST" class="p-4">
                 <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
                 <input type="hidden" name="start_date" x-model="selectedStartDate">
-                <input type="hidden" name="start_hour" :value="selectedStartHour">
-                <input type="hidden" name="duration" :value="selectedDuration">
+                <input type="hidden" name="start_slot" :value="selectedStartSlot">
+                <input type="hidden" name="duration_slots" :value="selectedDurationSlots">
                 <div class="flex flex-wrap items-end gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Terreno</label>
@@ -271,19 +271,19 @@
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
                         <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
-                            x-text="selectedStartHour ? formatHour(selectedStartHour) : '—'"></p>
+                            x-text="selectedStartSlot !== null ? formatTimeFromSlot(selectedStartSlot) : '—'"></p>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Durata</label>
                         <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
-                            x-text="selectedDuration + (selectedDuration == 1 ? ' ora' : ' ore')"></p>
+                            x-text="selectedDurationSlots ? formatDurationText(selectedDurationSlots) : ''"></p>
                     </div>
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Note (opzionale)</label>
                         <input type="text" name="notes" placeholder="Dettagli attività, numeri, richieste"
                             class="w-full border-gray-200 rounded-md text-sm focus:ring-scout-500 focus:border-scout-500 py-1.5">
                     </div>
-                    <button type="submit" :disabled="!selectedStartDate || !selectedStartHour"
+                    <button type="submit" :disabled="!selectedStartDate || selectedStartSlot === null"
                         class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-2 px-6 rounded-lg transition-colors shadow-md whitespace-nowrap">
                         Invia Richiesta
                     </button>
@@ -332,7 +332,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for res in user_reservations %}
-                    <tr>
+                    <tr x-show="{% if user.role == 'admin' %}!selectedTerrain || selectedTerrain.id == {{ res.terreno.id }}{% else %}true{% endif %}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ res.terreno.name }}
                         </td>
                         {% if user.role in ['tech', 'admin'] %}
@@ -381,6 +381,15 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if res.status == 'APPROVED' and user.role == 'admin' %}
+                            <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
+                                <button type="submit"
+                                    class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
+                                    onclick="return confirm('Annullare e rimuovere questo blocco/prenotazione? La fascia oraria tornerà disponibile in mappa.')">
+                                    🗑️ Rimuovi
+                                </button>
+                            </form>
+                            {% endif %}
                             {% if res.status == 'PENDING' %}
                             {% if user.role == 'unit' %}
                             <form action="/prenotazioni/cancel/{{ res.id }}" method="POST" class="inline">
@@ -438,12 +447,12 @@
 
             isDragging: false,
             dragStartDay: null,
-            dragStartHour: null,
-            dragCurrentHour: null,
+            dragStartSlot: null,
+            dragCurrentSlot: null,
 
             selectedStartDate: '2026-07-25',
-            selectedStartHour: 14,
-            selectedDuration: 2,
+            selectedStartSlot: null,
+            selectedDurationSlots: 4,
 
             init() {
                 this.initMap();
@@ -615,6 +624,25 @@
                 return days[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
             },
 
+            formatTimeFromSlot(slotIdx) {
+                let totalMinutes = slotIdx * 30;
+                let hours = Math.floor(totalMinutes / 60) + 7;
+                let minutes = totalMinutes % 60;
+                if (hours >= 24) {
+                    return ('0' + (hours - 24)).slice(-2) + ':' + ('0' + minutes).slice(-2);
+                }
+                return ('0' + hours).slice(-2) + ':' + ('0' + minutes).slice(-2);
+            },
+
+            formatDurationText(slots) {
+                let totalMinutes = slots * 30;
+                let h = Math.floor(totalMinutes / 60);
+                let m = totalMinutes % 60;
+                if (h > 0 && m > 0) return `${h}h e ${m}m`;
+                if (h > 0) return `${h} or${h > 1 ? 'e' : 'a'}`;
+                return `${m} minuti`;
+            },
+
             formatHour(h) {
                 if (h >= 24) {
                     return ('0' + (h - 24)).slice(-2) + ':00';
@@ -622,57 +650,71 @@
                 return ('0' + h).slice(-2) + ':00';
             },
 
-            getSlotClass(day, hour) {
+            getSlotClass(day, slotIdx) {
                 if (!this.selectedTerrain) return '';
 
-                let isApproved = this.isSlotApproved(day, hour);
-                if (isApproved) return 'bg-rose-500 border-rose-600 opacity-90 cursor-not-allowed';
+                let times = this.getSlotDates(day, slotIdx);
+                let res = this.selectedTerrain.reservations.find(r => {
+                    let rStart = new Date(r.start);
+                    let rEnd = new Date(r.end);
+                    return (rStart < times.end && rEnd > times.start);
+                });
 
-                let isPending = this.isSlotPending(day, hour);
-                if (isPending) {
-                    let isSelected = this.isSlotSelected(day, hour);
-                    if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
-                    return 'bg-amber-400 border-amber-500 opacity-90 cursor-pointer hover:bg-amber-300';
+                if (res) {
+                    if (res.status === 'APPROVED') {
+                        if (res.unit_name.toLowerCase() === 'bestiale') return 'bg-gray-700 border-gray-800 opacity-90 cursor-not-allowed text-white';
+                        if (res.unit_type.toLowerCase() === 'posto') return 'bg-red-600 border-red-700 opacity-90 cursor-not-allowed text-white';
+                        if (res.unit_type.toLowerCase() === 'reparto') return 'bg-amber-800 border-amber-900 opacity-90 cursor-not-allowed text-white';
+                        return 'bg-rose-500 border-rose-600 opacity-90 cursor-not-allowed text-white';
+                    } else if (res.status === 'PENDING') {
+                        let isSelected = this.isSlotSelected ? this.isSlotSelected(day, slotIdx) : false;
+                        if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
+                        return 'bg-amber-400 border-amber-500 opacity-90 cursor-pointer hover:bg-amber-300 text-black';
+                    }
                 }
 
-                let isSelected = this.isSlotSelected(day, hour);
+                let isSelected = this.isSlotSelected(day, slotIdx);
                 if (isSelected) return 'slot-selected bg-scout-500 border-scout-600 shadow-inner z-20 opacity-100';
 
                 return 'cursor-pointer hover:bg-scout-100';
             },
 
-            isSlotApproved(day, hour) {
-                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
-                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+            getSlotDates(day, slotIdx) {
+                let slotStart = new Date(day);
+                slotStart.setHours(7 + Math.floor(slotIdx / 2), (slotIdx % 2) * 30, 0, 0);
+                let slotEnd = new Date(day);
+                slotEnd.setHours(7 + Math.floor((slotIdx + 1) / 2), ((slotIdx + 1) % 2) * 30, 0, 0);
+                return { start: slotStart, end: slotEnd };
+            },
 
+            isSlotApproved(day, slotIdx) {
+                let times = this.getSlotDates(day, slotIdx);
                 return this.selectedTerrain.reservations.some(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (r.status === 'APPROVED' && rStart < slotEnd && rEnd > slotStart);
+                    return (r.status === 'APPROVED' && rStart < times.end && rEnd > times.start);
                 });
             },
 
-            isSlotPending(day, hour) {
-                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
-                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
-
+            isSlotPending(day, slotIdx) {
+                let times = this.getSlotDates(day, slotIdx);
                 return this.selectedTerrain.reservations.some(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (r.status === 'PENDING' && rStart < slotEnd && rEnd > slotStart);
+                    return (r.status === 'PENDING' && rStart < times.end && rEnd > times.start);
                 });
             },
 
             isSelectionOverlappingPending() {
-                if (!this.selectedStartDate) return false;
+                if (!this.selectedStartDate || this.selectedStartSlot === null) return false;
                 let parts = this.selectedStartDate.split('-');
                 let selTime = new Date(parts[0], parts[1] - 1, parts[2]).getTime();
 
-                let startH = parseInt(this.selectedStartHour);
-                let endH = startH + parseInt(this.selectedDuration) - 1;
+                let startSlot = parseInt(this.selectedStartSlot);
+                let endSlot = startSlot + parseInt(this.selectedDurationSlots) - 1;
 
-                for (let h = startH; h <= endH; h++) {
-                    if (this.isSlotPending(selTime, h)) return true;
+                for (let s = startSlot; s <= endSlot; s++) {
+                    if (this.isSlotPending(selTime, s)) return true;
                 }
                 return false;
             },
@@ -684,37 +726,32 @@
             },
 
             parseDateToLocalTime(dateStr) {
-                // Parse 'YYYY-MM-DD' string into local midnight timestamp,
-                // avoiding UTC vs local timezone mismatch.
                 const parts = dateStr.split('-');
                 return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
             },
 
             localDayTime(day) {
-                // Convert any date representation to local midnight timestamp.
-                // Used in data-day attributes and all day comparisons.
                 const d = day instanceof Date ? day : new Date(day);
                 return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             },
 
-            startDrag(day, hour) {
-                if (this.isSlotApproved(day, hour)) return;
+            startDrag(day, slotIdx) {
+                if (this.isSlotApproved(day, slotIdx)) return;
                 this.isDragging = true;
-                // Use local midnight timestamp for consistent day matching
                 const d = day instanceof Date ? day : new Date(day);
                 this.dragStartDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                this.dragStartHour = hour;
-                this.dragCurrentHour = hour;
+                this.dragStartSlot = slotIdx;
+                this.dragCurrentSlot = slotIdx;
             },
 
             onGlobalDrag(e) {
                 if (!this.isDragging) return;
 
                 let el = document.elementFromPoint(e.clientX, e.clientY);
-                if (el && el.dataset.day && el.dataset.hour) {
+                if (el && el.dataset.day && el.dataset.slot) {
                     let elDayTime = parseInt(el.dataset.day);
                     if (elDayTime === this.dragStartDay) {
-                        this.dragCurrentHour = parseInt(el.dataset.hour);
+                        this.dragCurrentSlot = parseInt(el.dataset.slot);
                     }
                 }
             },
@@ -723,33 +760,33 @@
                 if (!this.isDragging) return;
                 this.isDragging = false;
 
-                let startH = Math.min(this.dragStartHour, this.dragCurrentHour);
-                let endH = Math.max(this.dragStartHour, this.dragCurrentHour);
-                let duration = endH - startH + 1;
+                let startS = Math.min(this.dragStartSlot, this.dragCurrentSlot);
+                let endS = Math.max(this.dragStartSlot, this.dragCurrentSlot);
+                let duration = endS - startS + 1;
 
-                if (duration > 4) {
-                    duration = 4;
-                    endH = startH + 3;
+                // Max 4 hours = 8 slots
+                if (duration > 8) {
+                    duration = 8;
+                    endS = startS + 7;
                 }
 
                 let valid = true;
-                for (let h = startH; h <= endH; h++) {
-                    if (this.isSlotApproved(this.dragStartDay, h)) {
+                for (let s = startS; s <= endS; s++) {
+                    if (this.isSlotApproved(this.dragStartDay, s)) {
                         valid = false; break;
                     }
                 }
 
                 if (valid) {
                     this.selectedStartDate = this.formatDateForInput(new Date(this.dragStartDay));
-                    this.selectedStartHour = startH;
-                    this.selectedDuration = duration;
+                    this.selectedStartSlot = startS;
+                    this.selectedDurationSlots = duration;
                 }
 
                 this.dragStartDay = null;
             },
 
-            isSlotSelected(day, hour) {
-                // Normalize day to local midnight timestamp for consistent comparison
+            isSlotSelected(day, slotIdx) {
                 let dayTime;
                 if (typeof day === 'number') {
                     dayTime = day;
@@ -760,61 +797,71 @@
                 }
 
                 if (this.isDragging && dayTime === this.dragStartDay) {
-                    let minH = Math.min(this.dragStartHour, this.dragCurrentHour);
-                    let maxH = Math.max(this.dragStartHour, this.dragCurrentHour);
-                    if (maxH - minH + 1 > 4) maxH = minH + 3;
-                    return hour >= minH && hour <= maxH;
+                    let minS = Math.min(this.dragStartSlot, this.dragCurrentSlot);
+                    let maxS = Math.max(this.dragStartSlot, this.dragCurrentSlot);
+                    if (maxS - minS + 1 > 8) maxS = minS + 7;
+                    return slotIdx >= minS && slotIdx <= maxS;
                 }
 
-                if (!this.isDragging && this.selectedStartDate) {
+                if (!this.isDragging && this.selectedStartDate && this.selectedStartSlot !== null) {
                     let selTime = this.parseDateToLocalTime(this.selectedStartDate);
 
                     if (dayTime === selTime) {
-                        const maxH = this.selectedStartHour + parseInt(this.selectedDuration) - 1;
-                        return hour >= this.selectedStartHour && hour <= maxH;
+                        const maxS = this.selectedStartSlot + parseInt(this.selectedDurationSlots) - 1;
+                        return slotIdx >= this.selectedStartSlot && slotIdx <= maxS;
                     }
                 }
 
                 return false;
             },
 
-            getSlotText(day, hour) {
+            getSlotText(day, slotIdx) {
                 if (!this.selectedTerrain) return '';
-                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
-                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+                let times = this.getSlotDates(day, slotIdx);
 
                 let res = this.selectedTerrain.reservations.find(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (rStart < slotEnd && rEnd > slotStart);
+                    return (rStart < times.end && rEnd > times.start);
                 });
 
                 if (res && res.status !== 'CANCELLED' && res.status !== 'REJECTED') {
-                    if (res.status === 'APPROVED') {
-                        return res.unit_name;
+                    // Show text only on the first slot of the reservation block
+                    let prevSlotTimes;
+                    if (slotIdx > 0) {
+                        prevSlotTimes = this.getSlotDates(day, slotIdx - 1);
                     } else {
-                        return '⏳';
+                        let prevDay = new Date(day);
+                        prevDay.setDate(prevDay.getDate() - 1);
+                        prevSlotTimes = this.getSlotDates(prevDay, 35);
+                    }
+
+                    let rStart = new Date(res.start);
+                    let rEnd = new Date(res.end);
+                    let prevOverlapped = (rStart < prevSlotTimes.end && rEnd > prevSlotTimes.start);
+
+                    if (!prevOverlapped) {
+                        return res.status === 'APPROVED' ? res.unit_name : '⏳';
                     }
                 }
                 return '';
             },
 
-            getSlotTooltip(day, hour) {
+            getSlotTooltip(day, slotIdx) {
                 if (!this.selectedTerrain) return '';
-                let slotStart = new Date(day); slotStart.setHours(hour, 0, 0);
-                let slotEnd = new Date(day); slotEnd.setHours(hour + 1, 0, 0);
+                let times = this.getSlotDates(day, slotIdx);
 
                 let res = this.selectedTerrain.reservations.find(r => {
                     let rStart = new Date(r.start);
                     let rEnd = new Date(r.end);
-                    return (rStart < slotEnd && rEnd > slotStart);
+                    return (rStart < times.end && rEnd > times.start);
                 });
 
                 if (res && res.status !== 'CANCELLED' && res.status !== 'REJECTED') {
                     let rStart = new Date(res.start);
                     let rEnd = new Date(res.end);
-                    let hStart = rStart.getHours() + ':00';
-                    let hEnd = rEnd.getHours() + ':00';
+                    let hStart = ('0' + rStart.getHours()).slice(-2) + ':' + ('0' + rStart.getMinutes()).slice(-2);
+                    let hEnd = ('0' + rEnd.getHours()).slice(-2) + ':' + ('0' + rEnd.getMinutes()).slice(-2);
                     let status = res.status === 'PENDING' ? ' (in attesa)' : '';
                     return `${res.unit_name} \u2014 ${hStart}-${hEnd}${status}`;
                 }

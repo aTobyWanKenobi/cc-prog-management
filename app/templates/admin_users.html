@@ -68,13 +68,12 @@
                 <select name="role" required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                     <option value="unit">Unit (Reparto/Posto)</option>
-                    <option value="tech">Tech (Sportello)</option>
                     <option value="admin">Admin (Direzione)</option>
                 </select>
 
                 <select name="unita_id"
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
-                    <option value="">Nessuna Unità (Solo Tech/Admin)</option>
+                    <option value="">Nessuna Unità (Solo Admin)</option>
                     {% for u in unita %}
                     <option value="{{ u.id }}">{{ u.name }} ({{ u.tipo }})</option>
                     {% endfor %}
@@ -164,7 +163,6 @@
                                         <select name="role" x-model="editUser.role" required
                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-sm p-2 bg-white text-gray-900">
                                             <option value="unit">Unit (Reparto/Posto)</option>
-                                            <option value="tech">Tech (Sportello)</option>
                                             <option value="admin">Admin (Direzione)</option>
                                         </select>
                                     </div>

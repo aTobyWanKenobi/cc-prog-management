@@ -227,13 +227,6 @@ def reset_and_init_db(db=None):
             db.add(admin_user)
             print("Admin user created.")
 
-        if not db.query(User).filter(User.username == "prog").first():
-            tech_user = User(
-                username="prog", email="tech@bestiale2026.ch", password_hash=get_password_hash("esplo"), role="tech"
-            )
-            db.add(tech_user)
-            print("Tech user created.")
-
         all_units = db.query(Unita).all()
         for unit in all_units:
             safe_username = "".join(c for c in unit.name if c.isalnum()).lower()

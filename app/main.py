@@ -83,10 +83,6 @@ async def login(
     elif login_role == "posto":
         if user.role != "unit" or not user.unita or user.unita.tipo != "Posto":
             return templates.TemplateResponse(request, "login.html", {"error": "L'unità non è un Posto Pionieri"})
-    elif login_role == "staff" and user.role != "tech":
-        return templates.TemplateResponse(
-            request, "login.html", {"error": "Non sei autorizzato come Staff / Sportello"}
-        )
     elif login_role == "direzione" and user.role != "admin":
         return templates.TemplateResponse(
             request, "login.html", {"error": "Non sei autorizzato come Direzione (Admin)"}
@@ -95,9 +91,9 @@ async def login(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
-    # Redirect Pionieri and Staff/Admin to reservations (since they don't use the ranking for now)
+    # Redirect Pionieri and Admin to reservations (since they don't use the ranking for now)
     redirect_url = "/"
-    if (user.role == "unit" and user.unita and user.unita.tipo == "Posto") or user.role in ["tech", "admin"]:
+    if (user.role == "unit" and user.unita and user.unita.tipo == "Posto") or user.role == "admin":
         redirect_url = "/prenotazioni"
 
     response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)

@@ -65,7 +65,7 @@ def test_edit_user(client, session):
 
     response = client.post(
         f"/admin/users/{user_id}/edit",
-        data={"username": "edited_scout", "email": "edited@example.com", "role": "tech", "unita_id": "1"},
+        data={"username": "edited_scout", "email": "edited@example.com", "role": "admin", "unita_id": "1"},
     )
     assert response.status_code == 200
     assert response.url.path == "/admin/users"
@@ -73,7 +73,7 @@ def test_edit_user(client, session):
     user = session.query(User).filter(User.id == user_id).first()
     assert user.username == "edited_scout"
     assert user.email == "edited@example.com"
-    assert user.role == "tech"
+    assert user.role == "admin"
 
 
 def test_reset_user_password(client, session):

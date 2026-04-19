@@ -63,7 +63,7 @@ def test_terreno_crud(client, session):
     assert session.query(Terreno).filter(Terreno.id == t.id).first() is None
 
 
-def test_gestione_terreni_filtering_staff(client, session):
+def test_gestione_terreni_filtering_admin(client, session):
     from app.models import Unita, User
 
     MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU"
