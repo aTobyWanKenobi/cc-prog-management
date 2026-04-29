@@ -176,7 +176,6 @@ data/*.db
 data/*.db-journal
 !data/seed/
 data/seed/riservazioni_test.csv
-data/seed/unita.csv
 
 # Logs
 logs/
