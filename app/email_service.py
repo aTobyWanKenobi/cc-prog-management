@@ -86,7 +86,7 @@ Periodo: {start_time} - {end_time}
 
 La richiesta è in attesa di approvazione da parte dello staff. Riceverai un'email quando verrà processata.
 
-Buon campo! ⛺""",
+Buon campo!""",
     )
 
 
@@ -103,15 +103,15 @@ def send_reservation_approved_email(
         return
     _send_email(
         to=unit_email,
-        subject=f"✅ Prenotazione approvata - {terrain_name}",
+        subject=f"Prenotazione approvata - {terrain_name}",
         body=f"""Ciao {unit_name},
 
-La tua prenotazione è stata APPROVATA! 🎉
+La tua prenotazione è stata APPROVATA!
 
 Terreno: {terrain_name}
 Periodo: {start_time} - {end_time}
 
-Il terreno è riservato per voi. Buona attività! ⛺""",
+Il terreno è riservato per voi. Buona attività!""",
     )
 
 
@@ -128,7 +128,7 @@ def send_reservation_rejected_email(
         return
     _send_email(
         to=unit_email,
-        subject=f"❌ Prenotazione rifiutata - {terrain_name}",
+        subject=f"Prenotazione rifiutata - {terrain_name}",
         body=f"""Ciao {unit_name},
 
 Purtroppo la tua prenotazione è stata RIFIUTATA.
@@ -138,41 +138,5 @@ Periodo: {start_time} - {end_time}
 
 Puoi riprovare con un altro orario o un altro terreno. Per domande, contatta lo sportello.
 
-Buon campo! ⛺""",
+Buon campo!""",
     )
-
-
-def get_support_emails(db) -> list[str]:
-    """Read support email addresses from AppSetting table."""
-    from app.models import AppSetting
-
-    setting = db.query(AppSetting).filter(AppSetting.key == "support_emails").first()
-    if setting and setting.value.strip():
-        return [e.strip() for e in setting.value.split(",") if e.strip()]
-    return []
-
-
-def send_support_email(
-    user_email: str | None, user_name: str, subject: str, message: str, role: str, recipients: list[str] | None = None
-):
-    """Send a support request email to the configured support team."""
-    if not recipients:
-        recipients = ["tech@bestiale2026.ch"]  # fallback
-
-    user_contact = user_email if user_email else "Nessuna email fornita"
-
-    for admin_email in recipients:
-        _send_email(
-            to=admin_email,
-            subject=f"[SUPPORTO] {subject} - {user_name}",
-            body=f"""Nuova richiesta di supporto dall'applicazione BeSTiapp.
-
-UTENTE: {user_name} (Ruolo: {role})
-EMAIL DI CONTATTO: {user_contact}
-
-OGGETTO: {subject}
-
-MESSAGGIO:
-{message}
-""",
-        )

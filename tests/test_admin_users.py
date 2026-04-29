@@ -20,7 +20,7 @@ def test_admin_users_page(client, session):
 
     response = client.get("/admin/users")
     assert response.status_code == 200
-    assert "Gestione Utenti" in response.text
+    assert "Gestione utenti" in response.text
     assert "admin" in response.text
 
 

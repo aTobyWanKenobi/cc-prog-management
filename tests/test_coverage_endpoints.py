@@ -141,7 +141,6 @@ def test_public_remaining_endpoints(client, session):
     client.get("/timeline")
 
     client.get("/export/ranking", follow_redirects=False)
-    client.post("/supporto", data={"subject": "Help", "message": "Help me!"}, follow_redirects=False)
 
     # API
     start = datetime.now().isoformat()

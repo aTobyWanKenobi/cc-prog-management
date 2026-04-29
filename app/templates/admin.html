@@ -11,23 +11,23 @@
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <a href="/admin"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-scout-600 text-scout-800">
-                Pannello & Log
+                Pannello admin
             </a>
             <a href="/admin/pattuglie"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Gestione Pattuglie
+                Gestione pattuglie
             </a>
             <a href="/admin/challenges"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Gestione Sfide
+                Gestione sfide
             </a>
             <a href="/admin/terreni"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Gestione Terreni
+                Gestione terreni
             </a>
             <a href="/admin/users"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm uppercase tracking-wide border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
-                Gestione Utenti
+                Gestione utenti
             </a>
         </nav>
     </div>
@@ -36,14 +36,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <!-- Quick Create Pattuglia -->
         <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
-            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Pattuglia</h2>
+            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova pattuglia</h2>
             <form action="/admin/pattuglie" method="post" class="space-y-4">
                 <div>
                     <input type="text" name="name" placeholder="Nome Pattuglia" required
                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                 </div>
                 <div>
-                    <input type="text" name="capo_pattuglia" placeholder="Capo Pattuglia" required
+                    <input type="text" name="capo_pattuglia" placeholder="Capo pattuglia" required
                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-scout-500 focus:ring-scout-500 sm:text-sm p-2 bg-white/80">
                 </div>
                 <div>
@@ -72,7 +72,7 @@
 
         <!-- Quick Create Challenge -->
         <div class="glass p-6 rounded-lg shadow-sm border-l-4 border-scout-500">
-            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova Sfida</h2>
+            <h2 class="text-xl font-bold mb-4 text-scout-800">Nuova sfida</h2>
             <form action="/admin/challenges" method="post" class="space-y-4">
                 <div>
                     <input type="text" name="name" placeholder="Nome Sfida" required
@@ -91,7 +91,7 @@
                 <div class="flex items-center">
                     <input type="checkbox" name="is_fungo" value="true"
                         class="h-4 w-4 text-scout-600 focus:ring-scout-500 border-gray-300 rounded">
-                    <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida Fungo 🍄</label>
+                    <label class="ml-2 block text-sm text-gray-900 font-medium">Sfida fungo</label>
                 </div>
                 <button type="submit"
                     class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-scout-600 hover:bg-scout-700">
@@ -104,7 +104,7 @@
     <!-- Log -->
     <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
-            <h3 class="text-lg leading-6 font-bold text-scout-900">Log Attività Recenti</h3>
+            <h3 class="text-lg leading-6 font-bold text-scout-900">Log attività recenti</h3>
         </div>
         <ul role="list" class="divide-y divide-scout-200 bg-white/60">
             {% for c in completions %}

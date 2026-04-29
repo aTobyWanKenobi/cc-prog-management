@@ -9,16 +9,7 @@ from app.services.backup_service import (
     execute_backup,
     generate_excel_riservazioni,
     generate_excel_sfide,
-    push_to_google_drive,
 )
-
-
-def test_push_to_google_drive(monkeypatch):
-    monkeypatch.setattr("app.services.backup_service.GOOGLE_DRIVE_FOLDER_ID", "")
-    assert push_to_google_drive("test") is False
-
-    monkeypatch.setattr("app.services.backup_service.GOOGLE_DRIVE_FOLDER_ID", "123")
-    assert push_to_google_drive("test") is True
 
 
 def test_generate_excel_sfide(session: Session, tmp_path):

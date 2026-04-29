@@ -1,14 +1,13 @@
 import shutil
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth import get_admin_user
 from app.database import SQLALCHEMY_DATABASE_URL, get_db
 from app.models import (
-    AppSetting,
     Challenge,
     Completion,
     Pattuglia,
@@ -58,8 +57,9 @@ async def reset_database(request: Request, user: User = Depends(get_admin_user))
 # --- Backup & Restore ---
 @router.post("/backup")
 async def trigger_backup(request: Request, user: User = Depends(get_admin_user)):
-    success, msg = execute_backup()
-    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+    execute_backup()
+    db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
+    return FileResponse(path=db_path, filename="punteggiometro.sqlite", media_type="application/octet-stream")
 
 
 @router.post("/restore")
@@ -502,31 +502,3 @@ async def rollback_completion(completion_id: int, request: Request, db: Session 
     if referer:
         return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
-
-
-# --- Settings ---
-@router.get("/settings", response_class=HTMLResponse)
-async def admin_settings(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
-    support_setting = db.query(AppSetting).filter(AppSetting.key == "support_emails").first()
-    support_emails = support_setting.value if support_setting else ""
-    return templates.TemplateResponse(
-        request,
-        "admin_settings.html",
-        {"user": user, "active_tab": "settings", "support_emails": support_emails},
-    )
-
-
-@router.post("/settings")
-async def update_settings(
-    request: Request,
-    support_emails: str = Form(""),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_admin_user),
-):
-    setting = db.query(AppSetting).filter(AppSetting.key == "support_emails").first()
-    if setting:
-        setting.value = support_emails.strip()
-    else:
-        db.add(AppSetting(key="support_emails", value=support_emails.strip()))
-    db.commit()
-    return RedirectResponse(url="/admin/settings", status_code=status.HTTP_303_SEE_OTHER)

@@ -18,12 +18,24 @@ def test_unita_model(session):
     fetched = session.query(Unita).filter_by(name="U1").first()
     assert fetched == u
 
+    # short_name defaults to None
+    assert fetched.short_name is None
+
     # Test Unique Constraint on Name
     u2 = Unita(name="U1", sottocampo="S2")
     session.add(u2)
     with pytest.raises(IntegrityError):
         session.commit()
     session.rollback()
+
+
+def test_unita_short_name(session):
+    u = Unita(name="U_Short", short_name="TST-E", sottocampo="S")
+    session.add(u)
+    session.commit()
+
+    fetched = session.query(Unita).filter_by(name="U_Short").first()
+    assert fetched.short_name == "TST-E"
 
 
 def test_pattuglia_relationships(session):

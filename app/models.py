@@ -42,6 +42,7 @@ class Unita(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(unique=True, index=True)
+    short_name: Mapped[str | None] = mapped_column(nullable=True)  # Abbreviation for calendar cells
     tipo: Mapped[str] = mapped_column(default="Reparto")  # Reparto or Posto
     sottocampo: Mapped[str] = mapped_column(nullable=True)
     email: Mapped[str | None] = mapped_column(nullable=True)
@@ -118,7 +119,7 @@ class Terreno(Base):
     polygon: Mapped[str] = mapped_column()  # JSON string of coordinates
     description: Mapped[str] = mapped_column(default="")
     image_urls: Mapped[str] = mapped_column(default="[]")  # JSON string of list of URLs
-    tipo_accesso: Mapped[str] = mapped_column(default="entrambi")  # reparto, posto, or entrambi
+    tipo_accesso: Mapped[str] = mapped_column(default="entrambi")  # reparto, posto, entrambi, or bestiale (admin-only)
 
     prenotazioni: Mapped[list["Prenotazione"]] = relationship(back_populates="terreno")
 
@@ -137,10 +138,3 @@ class Prenotazione(Base):
 
     terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
     unita: Mapped["Unita"] = relationship()
-
-
-class AppSetting(Base):
-    __tablename__ = "app_settings"
-
-    key: Mapped[str] = mapped_column(primary_key=True)
-    value: Mapped[str] = mapped_column(default="")

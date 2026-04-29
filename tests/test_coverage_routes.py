@@ -4,7 +4,6 @@ from app.email_service import (
     send_reservation_approved_email,
     send_reservation_rejected_email,
     send_reservation_requested_email,
-    send_support_email,
 )
 from app.models import Prenotazione, Terreno, Unita, User
 
@@ -101,6 +100,5 @@ def test_email_service_functions(monkeypatch):
     send_reservation_requested_email(None, "Lupi", "Base", "2026", "2026")
     send_reservation_approved_email(None, "Lupi", "Base", "2026", "2026")
     send_reservation_rejected_email(None, "Lupi", "Base", "2026", "2026")
-    send_support_email("test@test.com", "Name", "Subject", "Message", "unit")
 
     # We will exclude sendgrid API tests here to avoid complexity.
