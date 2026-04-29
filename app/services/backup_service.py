@@ -54,18 +54,6 @@ def generate_excel_riservazioni(db: Session, filepath: str):
     wb.save(filepath)
 
 
-def push_to_google_drive(filepath: str):
-    """
-    Placeholder for Google Drive integration.
-    Logs the action or interacts with Google Drive API if configured.
-    """
-    if not GOOGLE_DRIVE_FOLDER_ID:
-        print(f"Skipping Google Drive push for {filepath} (no folder ID configured)")
-        return False
-    print(f"Simulating push of {filepath} to Google Drive folder {GOOGLE_DRIVE_FOLDER_ID}")
-    return True
-
-
 def execute_backup() -> tuple[bool, str]:
     """
     Executes the full backup process:
@@ -82,18 +70,15 @@ def execute_backup() -> tuple[bool, str]:
         backup_db_path = os.path.join(BACKUP_DIR, f"{timestamp}_backup_db.sqlite")
         if os.path.exists(db_path):  # pragma: no cover
             shutil.copy2(db_path, backup_db_path)
-            push_to_google_drive(backup_db_path)
 
         # 2. Excels
         db = SessionLocal()
         try:
             sfide_path = os.path.join(BACKUP_DIR, f"{timestamp}_sfide_e_punteggi.xlsx")
             generate_excel_sfide(db, sfide_path)
-            push_to_google_drive(sfide_path)
 
             riserv_path = os.path.join(BACKUP_DIR, f"{timestamp}_riservazioni_terreni.xlsx")
             generate_excel_riservazioni(db, riserv_path)
-            push_to_google_drive(riserv_path)
         finally:
             db.close()
 

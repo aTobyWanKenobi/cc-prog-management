@@ -10,11 +10,9 @@ from sqlalchemy.orm import Session, joinedload
 from app.auth import get_admin_user, get_authenticated_user
 from app.database import get_db
 from app.email_service import (
-    get_support_emails,
     send_reservation_approved_email,
     send_reservation_rejected_email,
     send_reservation_requested_email,
-    send_support_email,
 )
 from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
 
@@ -147,7 +145,9 @@ async def create_prenotazione(
     terreno = db.query(Terreno).filter(Terreno.id == terreno_id).first()
     if not terreno:
         raise HTTPException(status_code=404, detail="Terreno non trovato.")
-    if tipo_unita and terreno.tipo_accesso != "entrambi" and terreno.tipo_accesso != tipo_unita:
+    if terreno.tipo_accesso == "bestiale" and user.role != "admin":
+        raise HTTPException(status_code=403, detail="Questo terreno non è disponibile per le unità.")
+    if tipo_unita and terreno.tipo_accesso not in ("entrambi", tipo_unita):
         raise HTTPException(
             status_code=403, detail=f"Questo terreno non è disponibile per la tua branca ({tipo_unita.capitalize()})."
         )
@@ -477,6 +477,9 @@ async def get_terreni_availability(
 
     if tipo_unita:
         terreni_query = terreni_query.filter(Terreno.tipo_accesso.in_(["entrambi", tipo_unita]))
+    elif user.role != "admin":
+        # Non-admin users without a specific tipo (e.g. tech role) still cannot see bestiale terrains
+        terreni_query = terreni_query.filter(Terreno.tipo_accesso != "bestiale")
 
     terreni = terreni_query.all()
     results = []
@@ -546,6 +549,7 @@ async def get_terreni_availability(
                         "end": r.end_time.isoformat(),
                         "status": r.status,
                         "unit_name": r.unita.name,
+                        "unit_short_name": r.unita.short_name or r.unita.name,
                         "unit_type": getattr(r.unita, "tipo", ""),
                         "notes": r.notes if (user.role == "admin" or user.unita_id == r.unita_id) else "",
                     }
@@ -588,33 +592,3 @@ async def export_ranking(db: Session = Depends(get_db), user: User = Depends(get
     response = StreamingResponse(io.BytesIO(csv_data.encode("utf-8")), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=classifica_scout.csv"
     return response
-
-
-@router.get("/supporto", response_class=HTMLResponse)
-async def supporto_page(request: Request, user: User = Depends(get_authenticated_user)):
-    """Render the support contact form."""
-    return templates.TemplateResponse(request, "support.html", {"user": user})
-
-
-@router.post("/supporto", response_class=HTMLResponse)
-async def post_supporto(
-    request: Request,
-    subject: str = Form(...),
-    message: str = Form(...),
-    user: User = Depends(get_authenticated_user),
-    db: Session = Depends(get_db),
-):
-    """Handle support form submission."""
-    try:
-        user_name = user.unita.name if user.unita else user.username
-        role = user.role
-        email = user.email if user.email else (user.unita.email if user.unita else None)
-        recipients = get_support_emails(db)
-        send_support_email(
-            user_email=email, user_name=user_name, subject=subject, message=message, role=role, recipients=recipients
-        )
-        return templates.TemplateResponse(request, "support.html", {"user": user, "success": True})
-    except Exception as e:
-        return templates.TemplateResponse(
-            request, "support.html", {"user": user, "error": f"Errore durante l'invio: {str(e)}"}
-        )

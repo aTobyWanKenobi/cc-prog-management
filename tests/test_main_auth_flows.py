@@ -70,7 +70,7 @@ def test_password_reset_confirm(client, session):
     # Access reset page
     response = client.get("/reset-password?token=valid_token")
     assert response.status_code == 200
-    assert "Nuova Password" in response.text
+    assert "Nuova password" in response.text
 
     # Submit new password
     response = client.post("/reset-password-confirm", data={"token": "valid_token", "new_password": "new_secure_pw"})

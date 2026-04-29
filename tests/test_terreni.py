@@ -145,3 +145,66 @@ def test_reservation_visibility(client, session):
     assert response.status_code == 200
     assert "Scouts" in response.text
     assert "PENDING" in response.text
+
+
+def test_bestiale_terrain_hidden_from_units(client, session):
+    """Terrains with tipo_accesso='bestiale' must not appear in the availability API for unit users."""
+    from datetime import datetime, timedelta
+
+    MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU"
+    u = Unita(name="BES Unit", tipo="Reparto", email="bes@test.com")
+    session.add(u)
+    session.commit()
+
+    unit_user = User(username="bes_unit", password_hash=MOCK_HASH, role="unit", unita_id=u.id)
+    session.add(unit_user)
+
+    t_normal = Terreno(
+        name="Normal Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="entrambi"
+    )
+    t_bestiale = Terreno(
+        name="BeSTiale Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="bestiale"
+    )
+    session.add_all([t_normal, t_bestiale])
+    session.commit()
+
+    client.post("/login", data={"username": "bes_unit", "password": "god", "login_role": "unit"})
+
+    start = datetime.now().isoformat()
+    end = (datetime.now() + timedelta(days=1)).isoformat()
+    response = client.get(f"/api/terreni/availability?start_date={start}&end_date={end}")
+    assert response.status_code == 200
+
+    terrain_names = [t["name"] for t in response.json()]
+    assert "Normal Terrain" in terrain_names
+    assert "BeSTiale Terrain" not in terrain_names
+
+
+def test_bestiale_terrain_booking_blocked_for_units(client, session):
+    """Unit users must receive 403 when trying to book a bestiale terrain."""
+    MOCK_HASH = "$argon2id$v=19$m=65536,t=3,p=4$uDcGYOwdwzgHAIDwHmNMaQ$Zz9Nrb26WqJFip1NhJwp6ndqBVMgh15zjAUUHsJXNYU"
+    u = Unita(name="BES Unit2", tipo="Reparto", email="bes2@test.com")
+    session.add(u)
+    session.commit()
+
+    unit_user = User(username="bes_unit2", password_hash=MOCK_HASH, role="unit", unita_id=u.id)
+    t_bestiale = Terreno(
+        name="BeSTiale Only", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="bestiale"
+    )
+    session.add_all([unit_user, t_bestiale])
+    session.commit()
+
+    client.post("/login", data={"username": "bes_unit2", "password": "god", "login_role": "unit"})
+
+    response = client.post(
+        "/prenotazioni",
+        data={
+            "terreno_id": str(t_bestiale.id),
+            "start_date": "2026-07-25",
+            "start_slot": "6",
+            "duration_slots": "4",
+            "notes": "",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 403

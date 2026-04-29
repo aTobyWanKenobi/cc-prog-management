@@ -75,12 +75,12 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="terrainCalendar()">
 
-    <h1 class="text-3xl font-extrabold text-scout-800 mb-6">Calendario Terreni 🏕️</h1>
+    <h1 class="text-3xl font-extrabold text-scout-800 mb-6">Calendario terreni</h1>
 
     <!-- Map + Details Panel Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[550px]">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[550px]">
         <!-- Map Section -->
-        <div class="lg:col-span-2 bg-white p-1 rounded-xl shadow-lg border border-gray-200 h-full relative">
+        <div class="lg:col-span-2 bg-white p-1 rounded-xl shadow-lg border border-gray-200 h-[400px] lg:h-full relative">
             <div id="map" class="z-0"></div>
 
             <!-- Legend overlay -->
@@ -98,7 +98,7 @@
         </div>
 
         <!-- Details Panel -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-full overflow-hidden">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-[400px] lg:h-full overflow-hidden">
 
             <!-- Filter Controls (always visible at top of panel) -->
             <div class="p-4 border-b border-gray-100 shrink-0">
@@ -249,7 +249,7 @@
                         d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
                     </path>
                 </svg>
-                <h3 class="font-bold text-blue-800 text-sm">Richiedi Prenotazione</h3>
+                <h3 class="font-bold text-blue-800 text-sm">Richiedi prenotazione</h3>
                 <span class="ml-3 text-xs text-blue-600">Trascina sul calendario per selezionare l'orario (max
                     4h).</span>
             </div>
@@ -269,14 +269,18 @@
                             x-text="formatDateWithDay(selectedStartDate) || '—'"></p>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Ora Inizio</label>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Ora inizio</label>
                         <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
                             x-text="selectedStartSlot !== null ? formatTimeFromSlot(selectedStartSlot) : '—'"></p>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Durata</label>
-                        <p class="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
-                            x-text="selectedDurationSlots ? formatDurationText(selectedDurationSlots) : ''"></p>
+                        <select x-model.number="selectedDurationSlots" @change="validateSelection()" :disabled="!selectedStartDate || selectedStartSlot === null"
+                            class="w-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md px-3 py-1.5 focus:ring-scout-500 focus:border-scout-500 disabled:bg-gray-100 disabled:text-gray-400">
+                            <template x-for="i in 8" :key="i">
+                                <option :value="i" x-text="formatDurationText(i)"></option>
+                            </template>
+                        </select>
                     </div>
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Note (opzionale)</label>
@@ -285,7 +289,7 @@
                     </div>
                     <button type="submit" :disabled="!selectedStartDate || selectedStartSlot === null"
                         class="bg-scout-600 hover:bg-scout-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-bold py-2 px-6 rounded-lg transition-colors shadow-md whitespace-nowrap">
-                        Invia Richiesta
+                        Invia richiesta
                     </button>
                 </div>
                 <div x-show="isSelectionOverlappingPending()"
@@ -346,20 +350,16 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if res.status == 'APPROVED' %}
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅
-                                Approvata</span>
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Approvata</span>
                             {% elif res.status == 'PENDING' %}
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳
-                                In Attesa</span>
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">In attesa</span>
                             {% elif res.status == 'REJECTED' %}
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">❌
-                                Rifiutata</span>
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Rifiutata</span>
                             {% elif res.status == 'CANCELLED' %}
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">🚫
-                                Annullata</span>
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">Annullata</span>
                             {% else %}
                             <span
                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">{{
@@ -373,8 +373,8 @@
                                 <input type="text" name="notes" value="{{ res.notes or '' }}"
                                     placeholder="Aggiungi una nota..."
                                     class="border-gray-200 rounded text-xs focus:ring-scout-500 w-[140px]">
-                                <button type="submit" class="text-blue-500 hover:text-blue-700"
-                                    title="Salva Note">💾</button>
+                                <button type="submit" class="text-blue-500 hover:text-blue-700 font-bold"
+                                    title="Salva Note">Salva</button>
                             </form>
                             {% else %}
                             {{ res.notes or '-' }}
@@ -386,7 +386,7 @@
                                 <button type="submit"
                                     class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
                                     onclick="return confirm('Annullare e rimuovere questo blocco/prenotazione? La fascia oraria tornerà disponibile in mappa.')">
-                                    🗑️ Rimuovi
+                                    Rimuovi
                                 </button>
                             </form>
                             {% endif %}
@@ -403,14 +403,14 @@
                             <form action="/gestione-terreni/approve/{{ res.id }}" method="POST" class="inline">
                                 <button type="submit"
                                     class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded mr-1 transition-colors">
-                                    ✅ Approva
+                                    Approva
                                 </button>
                             </form>
                             <form action="/gestione-terreni/reject/{{ res.id }}" method="POST" class="inline">
                                 <button type="submit"
                                     class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
                                     onclick="return confirm('Rifiutare questa prenotazione?')">
-                                    ❌ Rifiuta
+                                    Rifiuta
                                 </button>
                             </form>
                             {% endif %}
@@ -719,6 +719,32 @@
                 return false;
             },
 
+            validateSelection() {
+                if (!this.selectedStartDate || this.selectedStartSlot === null) return;
+
+                let dayTime = this.parseDateToLocalTime(this.selectedStartDate);
+                let startS = parseInt(this.selectedStartSlot);
+                let requestedDuration = parseInt(this.selectedDurationSlots);
+                let endS = startS + requestedDuration - 1;
+
+                // Max slots per day is 36 (0 to 35). Truncate if it overflows the day.
+                if (endS > 35) {
+                    requestedDuration = 35 - startS + 1;
+                    endS = 35;
+                }
+
+                // Check for overlapping approved slots. Truncate duration to fit.
+                let validSlots = 0;
+                for (let s = startS; s <= endS; s++) {
+                    if (this.isSlotApproved(dayTime, s)) {
+                        break;
+                    }
+                    validSlots++;
+                }
+
+                this.selectedDurationSlots = validSlots;
+            },
+
             formatDateForInput(date) {
                 const d = new Date(date);
                 const z = n => ('0' + n).slice(-2);
@@ -841,7 +867,7 @@
                     let prevOverlapped = (rStart < prevSlotTimes.end && rEnd > prevSlotTimes.start);
 
                     if (!prevOverlapped) {
-                        return res.status === 'APPROVED' ? res.unit_name : '⏳';
+                        return res.status === 'APPROVED' ? res.unit_short_name : 'In attesa';
                     }
                 }
                 return '';

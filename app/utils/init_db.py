@@ -6,7 +6,6 @@ from passlib.context import CryptContext
 
 from app.database import Base, SessionLocal, engine
 from app.models import (
-    AppSetting,
     Challenge,
     Pattuglia,
     Prenotazione,
@@ -55,6 +54,7 @@ def reset_and_init_db(db=None):
                 tipo = row["Tipo"].strip()
                 sottocampo = row["Sottocampo"].strip()
                 email = row.get("Email", "").strip()
+                short_name = row.get("ShortName", "").strip() or None
 
                 if not sottocampo:
                     sottocampo = None
@@ -64,7 +64,9 @@ def reset_and_init_db(db=None):
 
                 exists = db.query(Unita).filter(Unita.name == unit_name).first()
                 if not exists:
-                    new_unita = Unita(name=unit_name, tipo=tipo, sottocampo=sottocampo, email=email)
+                    new_unita = Unita(
+                        name=unit_name, tipo=tipo, sottocampo=sottocampo, email=email, short_name=short_name
+                    )
                     db.add(new_unita)
         db.commit()
         print("Units populated from CSV.")
@@ -240,14 +242,6 @@ def reset_and_init_db(db=None):
                 )
                 db.add(unit_user)
         db.commit()
-
-        # --- App Settings ---
-        if not db.query(AppSetting).filter(AppSetting.key == "support_emails").first():
-            db.add(AppSetting(key="support_emails", value="tech@bestiale2026.ch"))
-            db.commit()
-            print("Default app settings created.")
-
-        # Export Admin DB UI to data/credentials.txt is no longer needed or we can do it silently
 
     finally:
         if own_session:
