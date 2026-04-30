@@ -251,7 +251,7 @@
                 </svg>
                 <h3 class="font-bold text-blue-800 text-sm">Richiedi prenotazione</h3>
                 <span class="ml-3 text-xs text-blue-600">Trascina sul calendario per selezionare l'orario (max
-                    4h).</span>
+                    {% if user.role in ['tech', 'admin'] %}18h{% else %}4h{% endif %}).</span>
             </div>
             <form action="/prenotazioni" method="POST" class="p-4">
                 <input type="hidden" name="terreno_id" :value="selectedTerrain?.id">
@@ -277,7 +277,7 @@
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Durata</label>
                         <select x-model.number="selectedDurationSlots" @change="validateSelection()" :disabled="!selectedStartDate || selectedStartSlot === null"
                             class="w-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md px-3 py-1.5 focus:ring-scout-500 focus:border-scout-500 disabled:bg-gray-100 disabled:text-gray-400">
-                            <template x-for="i in 8" :key="i">
+                            <template x-for="i in maxSlots" :key="i">
                                 <option :value="i" x-text="formatDurationText(i)"></option>
                             </template>
                         </select>
@@ -453,6 +453,7 @@
             selectedStartDate: '2026-07-25',
             selectedStartSlot: null,
             selectedDurationSlots: 4,
+            maxSlots: {{ 36 if user.role in ['tech', 'admin'] else 8 }},
 
             init() {
                 this.initMap();
@@ -465,8 +466,8 @@
                 const savedCenter = localStorage.getItem('terrainMapCenter');
                 const savedZoom = localStorage.getItem('terrainMapZoom');
 
-                const initialCenter = savedCenter ? JSON.parse(savedCenter) : [46.565, 8.940];
-                const initialZoom = savedZoom ? parseInt(savedZoom) : 14;
+                const initialCenter = savedCenter ? JSON.parse(savedCenter) : [46.5635, 8.9410];
+                const initialZoom = savedZoom ? parseInt(savedZoom) : 15;
 
                 const campoBlenioBounds = L.latLngBounds(
                     [46.500, 8.850], // Southwest
@@ -790,10 +791,10 @@
                 let endS = Math.max(this.dragStartSlot, this.dragCurrentSlot);
                 let duration = endS - startS + 1;
 
-                // Max 4 hours = 8 slots
-                if (duration > 8) {
-                    duration = 8;
-                    endS = startS + 7;
+                // Max limits
+                if (duration > this.maxSlots) {
+                    duration = this.maxSlots;
+                    endS = startS + (this.maxSlots - 1);
                 }
 
                 let valid = true;
@@ -825,7 +826,7 @@
                 if (this.isDragging && dayTime === this.dragStartDay) {
                     let minS = Math.min(this.dragStartSlot, this.dragCurrentSlot);
                     let maxS = Math.max(this.dragStartSlot, this.dragCurrentSlot);
-                    if (maxS - minS + 1 > 8) maxS = minS + 7;
+                    if (maxS - minS + 1 > this.maxSlots) maxS = minS + (this.maxSlots - 1);
                     return slotIdx >= minS && slotIdx <= maxS;
                 }
 

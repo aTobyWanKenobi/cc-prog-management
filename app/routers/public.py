@@ -155,8 +155,9 @@ async def create_prenotazione(
     if start_slot < 0 or start_slot + duration_slots > 36:
         raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
 
-    if duration_slots < 1 or duration_slots > 8:
-        raise HTTPException(status_code=400, detail="Durata deve essere tra 30 minuti e 4 ore.")
+    max_slots = 36 if user.role in ["tech", "admin"] else 8
+    if duration_slots < 1 or duration_slots > max_slots:
+        raise HTTPException(status_code=400, detail=f"Durata deve essere tra 30 minuti e {max_slots // 2} ore.")
 
     try:
         base_date = datetime.strptime(start_date, "%Y-%m-%d")

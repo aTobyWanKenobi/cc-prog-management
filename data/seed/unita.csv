@@ -1,9 +1,9 @@
 Sottocampo,UnitName,ShortName,Tipo,Email
-Alpino,Bellinzona + Moesano,BEL-ROV-E,Reparto,bellinzonaemoesano@bestiale2026.ch
-Alpino,Brigata Locarno,BRD-E,Reparto,brigatalocarno@bestiale2026.ch
-Alpino,Tesserete,TSR-E,Reparto,tobia.albergoni@gmail.com
-Alpino,Viganello,VGN-E,Reparto,viganello@bestiale2026.ch
-Alpino,Breganzona,BRG-E,Reparto,breganzona@bestiale2026.ch
+Alpino,Bellinzona e Moesano,BEL-ROV-E,Reparto,bellinzonaemoesano@bestiale2026.ch
+Alpino,Locarno,BRD-E,Reparto,brigatalocarno@bestiale2026.ch
+Alpino,Tesserete,TES-E,Reparto,tobia.albergoni@gmail.com
+Alpino,Viganello,VIG-E,Reparto,viganello@bestiale2026.ch
+Alpino,Breganzona,BGZ-E,Reparto,breganzona@bestiale2026.ch
 Montano,Giubiasco,GIU-E,Reparto,giubiasco@bestiale2026.ch
 Montano,Biasca,BIA-E,Reparto,biasca@bestiale2026.ch
 Montano,Canobbio,CAN-E,Reparto,canobbio@bestiale2026.ch
@@ -11,17 +11,32 @@ Montano,Massagno,MAS-E,Reparto,massagno@bestiale2026.ch
 Montano,Agno Bioggio,AGN-E,Reparto,agnobioggio@bestiale2026.ch
 Montano,Balerna,BAL-E,Reparto,balerna@bestiale2026.ch
 Prealpino,Faido,FAI-E,Reparto,faido@bestiale2026.ch
-Prealpino,Claro-Daro + Sant'Antonino,CDR-E,Reparto,clarodarosantantonino@bestiale2026.ch
-Prealpino,Gambarogno,GAM-E,Reparto,gambarogno@bestiale2026.ch
-Prealpino,Vallemaggia,VAL-E,Reparto,vallemaggia@bestiale2026.ch
-Prealpino,Mendrisio + Monte San Giorgio,MEN-E,Reparto,mendrisiomontesangiorgio@bestiale2026.ch
+Prealpino,Due Vette e Sant'Antonino,CLA-ANT-E,Reparto,clarodarosantantonino@bestiale2026.ch
+Prealpino,Gambarogno,GMB-E,Reparto,gambarogno@bestiale2026.ch
+Prealpino,Vallemaggia,VMA-E,Reparto,vallemaggia@bestiale2026.ch
+Prealpino,Mendrisio e Monte San Giorgio,MEN-BSG-E,Reparto,mendrisiomontesangiorgio@bestiale2026.ch
 Prealpino,Arogno,ARO-E,Reparto,arogno@bestiale2026.ch
 Collinare,Lugano 1915,LUG-E,Reparto,lugano1915@bestiale2026.ch
-Collinare,Brigata La Fenice,FEN-E,Reparto,brigatalafenice@bestiale2026.ch
-Collinare,TeGo + Caslano,TGO-E,Reparto,tegocaslano@bestiale2026.ch
-Collinare,Medio Vedeggio,MED-E,Reparto,mediovedeggio@bestiale2026.ch
-Collinare,Castel S. Pietro,CSP-E,Reparto,castelspietro@bestiale2026.ch
-Collinare,SOC,SOC,Reparto,soc@bestiale2026.ch
-,Posto Tre Valli,P-TRV,Posto,postotrevalli@bestiale2026.ch
-,Posto Mendrisiotto,P-MEN,Posto,postomendrisiotto@bestiale2026.ch
-,Posto Luganese,P-LUG,Posto,postoluganese@bestiale2026.ch
+Collinare,La Fenice,BSF-E,Reparto,brigatalafenice@bestiale2026.ch
+Collinare,Tenero-Gordola e Caslano,CAS-TEG-E,Reparto,tegocaslano@bestiale2026.ch
+Collinare,Medio Vedeggio,MVE-E,Reparto,mediovedeggio@bestiale2026.ch
+Collinare,Castel San Pietro,CSP-E,Reparto,castelspietro@bestiale2026.ch
+Collinare,SOC,RDP-E,Reparto,soc@bestiale2026.ch
+,Muta Vallemaggia,VMA-L,Reparto,mutavallemaggia@bestiale2026.ch
+,Pio Due Vette e Faido,CLA-FAI-P,Posto,postotrevalli@bestiale2026.ch
+,Pio Bellinzona e Moesano,BEL-ROV-P,Posto,postobellinzonaemoesano@bestiale2026.ch
+,Pio Biasca,BIA-P,Posto,postobiasca@bestiale2026.ch
+,Pio Giubiasco,GIU-P,Posto,postogiubiasco@bestiale2026.ch
+,Pio Locarno,BRD-P,Posto,postolocarno@bestiale2026.ch
+,Pio Vallemaggia,VMA-P,Posto,postovallemaggia@bestiale2026.ch
+,Pio Breganzona,BGZ-P,Posto,postobreganzona@bestiale2026.ch
+,Pio La Fenice,BSF-P,Posto,postobrigatalafenice@bestiale2026.ch
+,Pio Lugano 1915,LUG-P,Posto,postolugano1915@bestiale2026.ch
+,Pio Massagno,MAS-P,Posto,postomassagno@bestiale2026.ch
+,Pio Medio Vedeggio,MVE-P,Posto,postomediovedeggio@bestiale2026.ch
+,Pio Tesserete,TES-P,Posto,postotesserete@bestiale2026.ch
+,Pio Viganello,VIG-P,Posto,postoviganello@bestiale2026.ch
+,Pio Balerna,BAL-P,Posto,postobalerna@bestiale2026.ch
+,Pio Castel San Pietro e Arogno,CDP-ARO-P,Posto,postocsparogno@bestiale2026.ch
+,Pio Monte San Giorgio,BSG-P,Posto,postosangiorgio@bestiale2026.ch
+,Pio Romont,ROM-P,Posto,postoromont@bestiale2026.ch

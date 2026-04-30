@@ -23,7 +23,7 @@ def test_login_admin_db(page: Page, live_server: str):
     Test the happy path for Admin DB.
     """
     page.goto(f"{live_server}/login")
-    page.click("button:has-text('Admin')")
+    page.click("button:has-text('BeSTiale')")
     page.fill('input[name="username"]', "admin")
     page.fill('input[name="password"]', "admin")
     page.click('button[type="submit"]')
@@ -41,7 +41,7 @@ def test_admin_can_access_input(page: Page, live_server: str):
     Test that an admin user can access the /input (Gestione Sfide) page.
     """
     page.goto(f"{live_server}/login")
-    page.click("button:has-text('Admin')")
+    page.click("button:has-text('BeSTiale')")
     page.fill('input[name="username"]', "admin")
     page.fill('input[name="password"]', "admin")
     page.click('button[type="submit"]')
@@ -111,7 +111,7 @@ def test_password_reset(page: Page, live_server: str):
     expect(page.locator("text=Password aggiornata con successo")).to_be_visible()
 
     # Wait for role tabs to be visible and click the Admin tab
-    page.click("text=Admin")
+    page.click("text=BeSTiale")
 
     # Login with new password
     page.fill('input[name="username"]', "admin")
