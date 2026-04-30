@@ -149,9 +149,10 @@ def reset_and_init_db(db=None):
                 if not t_name or not t_center_lat or not t_center_lon or not t_polygon:
                     raise ValueError(f"terreni.csv row {row_idx}: Missing required fields.")
 
-                is_valid, invalid_tags = TerrenoCategoria.validate_tags(t_tags)
-                if not is_valid:
-                    raise ValueError(f"terreni.csv row {row_idx}: Invalid tags: {invalid_tags}.")
+                if t_tags:
+                    is_valid, invalid_tags = TerrenoCategoria.validate_tags(t_tags)
+                    if not is_valid:
+                        raise ValueError(f"terreni.csv row {row_idx}: Invalid tags: {invalid_tags}.")
 
                 exists = db.query(Terreno).filter(Terreno.name == t_name).first()
                 if not exists:

@@ -50,17 +50,17 @@
             <button type="button" @click="role = 'reparto'"
                 :class="{'bg-scout-600 text-white': role === 'reparto', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'reparto'}"
                 class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-l-lg transition-colors border border-gray-200 border-r-0 whitespace-nowrap">
-                Reparto (Esplo)
+                Reparto
             </button>
             <button type="button" @click="role = 'posto'"
                 :class="{'bg-purple-600 text-white': role === 'posto', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'posto'}"
                 class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold transition-colors border-t border-b border-l border-gray-200 whitespace-nowrap">
-                Posto (Pio)
+                Posto
             </button>
             <button type="button" @click="role = 'direzione'"
                 :class="{'bg-red-600 text-white': role === 'direzione', 'bg-white/50 text-gray-700 hover:bg-white/80': role !== 'direzione'}"
                 class="flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-r-lg transition-colors border border-gray-200 border-l-0 whitespace-nowrap">
-                Admin
+                BeSTiale
             </button>
         </div>
 
@@ -73,11 +73,11 @@
                     'border-purple-200 text-purple-800': role === 'posto',
                     'border-red-200 text-red-800': role === 'direzione'
                 }">
-                <p x-show="role === 'reparto'">Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo
+                <p x-show="role === 'reparto'">Usa lo username assegnato al tuo
                     reparto.</p>
-                <p x-show="role === 'posto'" x-cloak>Accesso riservato ai Capi Unità. Usa lo username assegnato al tuo
+                <p x-show="role === 'posto'" x-cloak>Usa lo username assegnato al tuo
                     posto.</p>
-                <p x-show="role === 'direzione'" x-cloak>Accesso amministrativo completo.</p>
+                <p x-show="role === 'direzione'" x-cloak>Accesso équipe programma Esploratori.</p>
             </div>
 
             <div class="rounded-md shadow-sm -space-y-px">
