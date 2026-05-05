@@ -12,6 +12,7 @@ from app.models import (
     Completion,
     Pattuglia,
     Prenotazione,
+    PrenotazioneLog,
     Terreno,
     TerrenoCategoria,
     Unita,
@@ -413,10 +414,21 @@ async def edit_terreno(
 
     unita = db.query(Unita).order_by(Unita.name).all()
 
+    error = request.query_params.get("error")
+    success = request.query_params.get("success")
+
     return templates.TemplateResponse(
         request,
         "edit_terreno.html",
-        {"user": user, "terreno": terreno, "prenotazioni": prenotazioni, "unita": unita, "active_tab": "terreni"},
+        {
+            "user": user,
+            "terreno": terreno,
+            "prenotazioni": prenotazioni,
+            "unita": unita,
+            "active_tab": "terreni",
+            "error": error,
+            "success": success,
+        },
     )
 
 
@@ -499,6 +511,73 @@ async def reassign_prenotazione(
         return RedirectResponse(url=f"/admin/terreni/{prenotazione.terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
 
     return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni/{prenotazione_id}/modify-time")
+async def modify_prenotazione_time(
+    prenotazione_id: int,
+    start_date: str = Form(...),
+    start_slot: int = Form(...),
+    duration_slots: int = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    from datetime import datetime, timedelta
+
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    if start_slot < 0 or start_slot + duration_slots > 36:
+        raise HTTPException(status_code=400, detail="Prenotazioni permesse solo tra le 07:00 e le 01:00.")
+
+    try:
+        base_date = datetime.strptime(start_date, "%Y-%m-%d")
+        new_start_time = base_date + timedelta(hours=7, minutes=30 * start_slot)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data o ora non valida.") from None
+
+    new_end_time = new_start_time + timedelta(minutes=30 * duration_slots)
+    new_duration_float = duration_slots * 0.5
+
+    # Check for overlapping APPROVED reservations on the same terrain
+    overlap = (
+        db.query(Prenotazione)
+        .filter(
+            Prenotazione.terreno_id == prenotazione.terreno_id,
+            Prenotazione.status == "APPROVED",
+            Prenotazione.id != prenotazione.id,
+            Prenotazione.start_time < new_end_time,
+            Prenotazione.end_time > new_start_time,
+        )
+        .first()
+    )
+
+    if overlap:
+        return RedirectResponse(
+            url=f"/admin/terreni/{prenotazione.terreno_id}?error=overlap", status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    old_time_str = f"{prenotazione.start_time.strftime('%Y-%m-%d %H:%M')} - {prenotazione.end_time.strftime('%H:%M')}"
+    new_time_str = f"{new_start_time.strftime('%Y-%m-%d %H:%M')} - {new_end_time.strftime('%H:%M')}"
+
+    prenotazione.start_time = new_start_time
+    prenotazione.end_time = new_end_time
+    prenotazione.duration = new_duration_float
+
+    log_entry = PrenotazioneLog(
+        prenotazione_id=prenotazione.id,
+        user_id=user.id,
+        action="TIME_MODIFIED",
+        old_value=old_time_str,
+        new_value=new_time_str,
+    )
+    db.add(log_entry)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/admin/terreni/{prenotazione.terreno_id}?success=time_updated", status_code=status.HTTP_303_SEE_OTHER
+    )
 
 
 # --- General Actions ---

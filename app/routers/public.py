@@ -14,7 +14,7 @@ from app.email_service import (
     send_reservation_rejected_email,
     send_reservation_requested_email,
 )
-from app.models import Challenge, Completion, Pattuglia, Prenotazione, Terreno, Unita, User
+from app.models import Challenge, Completion, Pattuglia, Prenotazione, PrenotazioneLog, Terreno, Unita, User
 
 router = APIRouter(
     dependencies=[Depends(get_authenticated_user)]  # All public routes require at least being logged in
@@ -226,7 +226,13 @@ async def update_prenotazione_notes(
     if user.role == "unit" and prenotazione.unita_id != user.unita_id:
         raise HTTPException(status_code=403, detail="Non sei autorizzato a modificare queste note.")
 
+    old_notes = prenotazione.notes
     prenotazione.notes = notes
+
+    log_entry = PrenotazioneLog(
+        prenotazione_id=prenotazione.id, user_id=user.id, action="NOTES_UPDATED", old_value=old_notes, new_value=notes
+    )
+    db.add(log_entry)
     db.commit()
     return RedirectResponse(url="/prenotazioni?success=notes_updated", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -272,6 +278,16 @@ async def gestione_terreni(
 
     terreni = db.query(Terreno).order_by(Terreno.name).all()
 
+    action_logs = (
+        db.query(PrenotazioneLog)
+        .options(
+            joinedload(PrenotazioneLog.user), joinedload(PrenotazioneLog.prenotazione).joinedload(Prenotazione.unita)
+        )
+        .order_by(PrenotazioneLog.timestamp.desc())
+        .limit(20)
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "gestione_terreni.html",
@@ -281,6 +297,7 @@ async def gestione_terreni(
             "approved": approved,
             "terreni": terreni,
             "selected_terreno_id": terreno_id_int,
+            "action_logs": action_logs,
         },
     )
 

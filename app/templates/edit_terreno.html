@@ -60,6 +60,28 @@
 
     <!-- Reservations List -->
     <div class="glass shadow overflow-hidden border-b border-gray-200 sm:rounded-lg table-responsive">
+        {% if error == 'overlap' %}
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4 mx-4 mt-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-red-700 font-bold">
+                        Errore: Orario non disponibile! Si sovrappone ad altre prenotazioni approvate.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if success == 'time_updated' %}
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4 mx-4 mt-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-green-700 font-bold">
+                        Orario modificato con successo!
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         <div class="px-4 py-5 sm:px-6 bg-scout-100/80 border-b border-scout-200">
             <h3 class="text-lg leading-6 font-bold text-scout-900">Prenotazioni</h3>
         </div>
@@ -76,6 +98,7 @@
             </thead>
             <tbody class="bg-white/60 divide-y divide-gray-200">
                 {% for p in prenotazioni %}
+                <form action="/admin/prenotazioni/{{ p.id }}/modify-time" method="POST" id="time-form-{{ p.id }}" class="hidden"></form>
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         <form action="/admin/prenotazioni/{{ p.id }}/reassign" method="post" class="m-0">
@@ -86,9 +109,27 @@
                             </select>
                         </form>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.start_time.strftime('%d/%m/%Y
-                        %H:%M') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.duration }}h</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="flex items-center space-x-1">
+                            <input type="date" name="start_date" form="time-form-{{ p.id }}" value="{{ p.start_time.strftime('%Y-%m-%d') }}" required class="border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-xs p-1">
+                            <select name="start_slot" form="time-form-{{ p.id }}" required class="border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-xs p-1">
+                                {% set current_slot = (p.start_time.hour - 7) * 2 + (1 if p.start_time.minute >= 30 else 0) %}
+                                {% for slot in range(37) %}
+                                <option value="{{ slot }}" {% if current_slot == slot %}selected{% endif %}>
+                                    {{ "%02d"|format((slot // 2) + 7) }}:{{ "30" if slot % 2 == 1 else "00" }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <select name="duration_slots" form="time-form-{{ p.id }}" required class="border-gray-300 rounded-md shadow-sm focus:ring-scout-500 focus:border-scout-500 sm:text-xs p-1">
+                            {% set current_duration = (p.duration * 2)|int %}
+                            {% for dur in range(1, 37) %}
+                            <option value="{{ dur }}" {% if current_duration == dur %}selected{% endif %}>{{ dur * 0.5 }}h</option>
+                            {% endfor %}
+                        </select>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <span
                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -96,16 +137,18 @@
                             {{ p.status }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-2 relative" style="overflow: visible;">
+                        <button type="submit" form="time-form-{{ p.id }}" class="text-indigo-600 hover:text-indigo-900 font-bold text-xs bg-indigo-50 px-2 py-1 rounded border border-indigo-200 transition-colors">Salva Orario</button>
                         <form action="/admin/prenotazioni/{{ p.id }}/delete" method="post" class="inline"
                             onsubmit="return confirm('Eliminare questa prenotazione?');">
-                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold">Elimina</button>
+                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold px-2 py-1">Elimina</button>
                         </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
     </div>
 </div>
 {% endblock %}
