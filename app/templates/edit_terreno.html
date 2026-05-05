@@ -77,7 +77,15 @@
             <tbody class="bg-white/60 divide-y divide-gray-200">
                 {% for p in prenotazioni %}
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ p.unita.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <form action="/admin/prenotazioni/{{ p.id }}/reassign" method="post" class="m-0">
+                            <select name="new_unita_id" class="text-sm border-gray-300 rounded-md py-1 pl-2 pr-8 shadow-sm focus:border-scout-500 focus:ring-scout-500 bg-white/80" onchange="this.form.submit()">
+                                {% for u in unita %}
+                                <option value="{{ u.id }}" {% if u.id == p.unita_id %}selected{% endif %}>{{ u.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.start_time.strftime('%d/%m/%Y
                         %H:%M') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.duration }}h</td>
