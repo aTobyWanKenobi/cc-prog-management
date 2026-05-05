@@ -411,10 +411,12 @@ async def edit_terreno(
         .all()
     )
 
+    unita = db.query(Unita).order_by(Unita.name).all()
+
     return templates.TemplateResponse(
         request,
         "edit_terreno.html",
-        {"user": user, "terreno": terreno, "prenotazioni": prenotazioni, "active_tab": "terreni"},
+        {"user": user, "terreno": terreno, "prenotazioni": prenotazioni, "unita": unita, "active_tab": "terreni"},
     )
 
 
@@ -479,6 +481,23 @@ async def delete_prenotazione(
         return RedirectResponse(url=f"/admin/terreni/{terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
 
     # If not found, just go back to terreni list
+    return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/prenotazioni/{prenotazione_id}/reassign")
+async def reassign_prenotazione(
+    prenotazione_id: int,
+    request: Request,
+    new_unita_id: int = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    prenotazione = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    if prenotazione:
+        prenotazione.unita_id = new_unita_id
+        db.commit()
+        return RedirectResponse(url=f"/admin/terreni/{prenotazione.terreno_id}", status_code=status.HTTP_303_SEE_OTHER)
+
     return RedirectResponse(url="/admin/terreni", status_code=status.HTTP_303_SEE_OTHER)
 
 
