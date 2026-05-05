@@ -138,3 +138,19 @@ class Prenotazione(Base):
 
     terreno: Mapped["Terreno"] = relationship(back_populates="prenotazioni")
     unita: Mapped["Unita"] = relationship()
+    logs: Mapped[list["PrenotazioneLog"]] = relationship(back_populates="prenotazione", cascade="all, delete-orphan")
+
+
+class PrenotazioneLog(Base):
+    __tablename__ = "prenotazione_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    prenotazione_id: Mapped[int] = mapped_column(ForeignKey("prenotazioni.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    action: Mapped[str] = mapped_column()  # e.g., "NOTES_UPDATED", "TIME_MODIFIED"
+    old_value: Mapped[str | None] = mapped_column(nullable=True)
+    new_value: Mapped[str | None] = mapped_column(nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+    prenotazione: Mapped["Prenotazione"] = relationship(back_populates="logs")
+    user: Mapped["User"] = relationship()
