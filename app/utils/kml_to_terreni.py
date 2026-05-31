@@ -185,7 +185,7 @@ def extract_polygons_from_file(file_path: str) -> list[Polygon]:
 
 
 # Valid categories for random tag generation
-VALID_TAGS = ["SPORT", "CERIMONIA", "NOTTURNO", "BIVACCO"]
+VALID_TAGS = ["SPORT", "CERIMONIA", "NOTTURNO", "BIVACCO", "RADURA", "BOSCO", "PRATO", "SPECIALE"]
 
 # Mock descriptions
 MOCK_DESCRIPTIONS = [
@@ -257,7 +257,7 @@ Examples:
     python kml_to_terreni.py geo/map.kmz --output terreni.csv
     python kml_to_terreni.py geo/map.kml --append
 
-Valid tags for terreni: SPORT, CERIMONIA, NOTTURNO, BIVACCO
+Valid tags for terreni: SPORT, CERIMONIA, NOTTURNO, BIVACCO, RADURA, BOSCO, PRATO, SPECIALE
         """,
     )
     parser.add_argument("input", help="Path to the KML or KMZ file")

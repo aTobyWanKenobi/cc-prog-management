@@ -182,6 +182,7 @@ logs/
 
 # Geographic data
 geo/
+*.kml
 
 # SQLite databases (redundant now, but good to keep local root clean)
 test_uat.db

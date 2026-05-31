@@ -11,7 +11,7 @@ def test_login_esplo_unit(page: Page, live_server: str):
     """
     page.goto(f"{live_server}/login")
     page.fill('input[name="username"]', "faido")
-    page.fill('input[name="password"]', "scout")
+    page.fill('input[name="password"]', "bestiale")
     page.click('button[type="submit"]')
 
     # Wait until it redirects and some content is visible
@@ -24,8 +24,8 @@ def test_login_admin_db(page: Page, live_server: str):
     """
     page.goto(f"{live_server}/login")
     page.click("button:has-text('BeSTiale')")
-    page.fill('input[name="username"]', "admin")
-    page.fill('input[name="password"]', "admin")
+    page.fill('input[name="username"]', "prog")
+    page.fill('input[name="password"]', "esplo")
     page.click('button[type="submit"]')
 
     # Check admin is logged in (goes to /prenotazioni)
@@ -42,8 +42,8 @@ def test_admin_can_access_input(page: Page, live_server: str):
     """
     page.goto(f"{live_server}/login")
     page.click("button:has-text('BeSTiale')")
-    page.fill('input[name="username"]', "admin")
-    page.fill('input[name="password"]', "admin")
+    page.fill('input[name="username"]', "prog")
+    page.fill('input[name="password"]', "esplo")
     page.click('button[type="submit"]')
 
     # Check admin is logged in (goes to /prenotazioni)
@@ -63,7 +63,7 @@ def test_password_reset(page: Page, live_server: str):
 
     expect(page.locator("text=Setup o Recupero")).to_be_visible()
 
-    email = "admin@bestiale2026.ch"
+    email = "programma@bestiale2026.ch"
     page.fill('input[name="email"]', email)
     page.click('button[type="submit"]')
 
@@ -104,7 +104,7 @@ def test_password_reset(page: Page, live_server: str):
     page.goto(f"{live_server}/reset-password?token={token}")
     expect(page.locator("text=Scegli la Nuova Password")).to_be_visible()
 
-    page.fill('input[name="new_password"]', "new_admin_pass")
+    page.fill('input[name="new_password"]', "new_prog_pass")
     page.click('button[type="submit"]')
 
     # Should be redirected to login with success message
@@ -114,8 +114,8 @@ def test_password_reset(page: Page, live_server: str):
     page.click("text=BeSTiale")
 
     # Login with new password
-    page.fill('input[name="username"]', "admin")
-    page.fill('input[name="password"]', "new_admin_pass")
+    page.fill('input[name="username"]', "prog")
+    page.fill('input[name="password"]', "new_prog_pass")
     page.click('button[type="submit"]')
 
     expect(page.locator("text=Tutte le Prenotazioni")).to_be_visible()
