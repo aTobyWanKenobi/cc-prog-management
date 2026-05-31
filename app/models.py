@@ -15,6 +15,10 @@ class TerrenoCategoria(str, Enum):
     CERIMONIA = "CERIMONIA"
     NOTTURNO = "NOTTURNO"
     BIVACCO = "BIVACCO"
+    RADURA = "RADURA"
+    BOSCO = "BOSCO"
+    PRATO = "PRATO"
+    SPECIALE = "SPECIALE"
 
     @classmethod
     def validate_tags(cls, tags_str: str) -> tuple[bool, list[str]]:
