@@ -80,7 +80,7 @@
     <!-- Map + Details Panel Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[550px]">
         <!-- Map Section -->
-        <div class="lg:col-span-2 bg-white p-1 rounded-xl shadow-lg border border-gray-200 h-[400px] lg:h-full relative">
+        <div class="lg:col-span-2 bg-white p-1 rounded-xl shadow-lg border border-gray-200 h-[320px] sm:h-[400px] lg:h-full relative">
             <div id="map" class="z-0"></div>
 
             <!-- Legend overlay -->
@@ -98,7 +98,7 @@
         </div>
 
         <!-- Details Panel -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-[400px] lg:h-full overflow-hidden">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col lg:h-full overflow-hidden">
 
             <!-- Filter Controls (always visible at top of panel) -->
             <div class="p-4 border-b border-gray-100 shrink-0">
@@ -144,9 +144,9 @@
             </div>
 
             <!-- Content State -->
-            <div x-show="selectedTerrain" class="flex flex-col h-full" style="display: none;">
+            <div x-show="selectedTerrain" class="flex flex-col" style="display: none;">
                 <!-- Header / Image Carousel -->
-                <div class="relative h-48 bg-gray-100 shrink-0">
+                <div class="relative h-36 sm:h-44 lg:h-48 bg-gray-100 shrink-0">
                     <template x-for="(img, idx) in selectedTerrain?.images" :key="idx">
                         <img :src="img" x-show="currentImageIndex === idx"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500">
@@ -179,7 +179,8 @@
                 </div>
 
                 <!-- Description -->
-                <div class="flex-1 p-4 bg-gray-50 text-sm text-gray-600 overflow-y-auto"
+                <div class="p-4 bg-gray-50 text-sm text-gray-600 overflow-y-auto lg:flex-1"
+                    style="max-height: 200px; min-height: 80px; white-space: pre-wrap;"
                     x-text="selectedTerrain?.description"></div>
             </div>
         </div>
