@@ -1,5 +1,6 @@
 import os
 import shutil
+import zipfile
 from datetime import datetime
 
 import openpyxl
@@ -54,16 +55,48 @@ def generate_excel_riservazioni(db: Session, filepath: str):
     wb.save(filepath)
 
 
-def execute_backup() -> tuple[bool, str]:
+def cleanup_old_backups(backup_dir: str, max_backups: int = 10):
+    """Keep only the most recent max_backups backup runs."""
+    try:
+        if not os.path.exists(backup_dir):
+            return
+        files = os.listdir(backup_dir)
+        runs = {}
+        for f in files:
+            parts = f.split("_")
+            if len(parts) >= 2:
+                prefix = f"{parts[0]}_{parts[1]}"
+                if len(parts[0]) == 8 and parts[0].isdigit() and len(parts[1]) == 4 and parts[1].isdigit():
+                    if prefix not in runs:
+                        runs[prefix] = []
+                    runs[prefix].append(f)
+
+        sorted_prefixes = sorted(runs.keys())
+        if len(sorted_prefixes) > max_backups:
+            prefixes_to_delete = sorted_prefixes[:-max_backups]
+            for prefix in prefixes_to_delete:
+                for f in runs[prefix]:
+                    file_path = os.path.join(backup_dir, f)
+                    try:
+                        os.remove(file_path)
+                    except Exception as e:
+                        print(f"Failed to delete old backup file {file_path}: {e}")
+    except Exception as e:
+        print(f"Cleanup of old backups failed: {e}")
+
+
+def execute_backup() -> tuple[bool, str, str | None]:
     """
     Executes the full backup process:
     1. Copies DB
     2. Generates Excels
-    3. Pushes to Google Drive
-    Returns (Success, message)
+    3. Zips database and Excels into a single ZIP archive
+    4. Cleans up old backups keeping a rolling window of 10 backups
+    Returns (Success, message, zip_path)
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
+    zip_path = None
 
     try:
         # 1. DB Copy
@@ -82,7 +115,20 @@ def execute_backup() -> tuple[bool, str]:
         finally:
             db.close()
 
-        return True, "Backup completato con successo"
+        # 3. Create ZIP archive
+        zip_path = os.path.join(BACKUP_DIR, f"{timestamp}_backup.zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            if os.path.exists(backup_db_path):
+                zip_file.write(backup_db_path, arcname="punteggiometro.sqlite")
+            if os.path.exists(sfide_path):
+                zip_file.write(sfide_path, arcname="sfide_e_punteggi.xlsx")
+            if os.path.exists(riserv_path):
+                zip_file.write(riserv_path, arcname="riservazioni_terreni.xlsx")
+
+        # 4. Rolling window cleanup
+        cleanup_old_backups(BACKUP_DIR, max_backups=10)
+
+        return True, "Backup completato con successo", zip_path
     except Exception as e:
         print(f"Backup failed: {e}")
-        return False, f"Errore durante il backup: {str(e)}"
+        return False, f"Errore durante il backup: {str(e)}", None

@@ -1,3 +1,4 @@
+import os
 import shutil
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
@@ -58,9 +59,14 @@ async def reset_database(request: Request, user: User = Depends(get_admin_user))
 # --- Backup & Restore ---
 @router.post("/backup")
 async def trigger_backup(request: Request, user: User = Depends(get_admin_user)):
-    execute_backup()
-    db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
-    return FileResponse(path=db_path, filename="punteggiometro.sqlite", media_type="application/octet-stream")
+    success, message, zip_path = execute_backup()
+    if not success or not zip_path or not os.path.exists(zip_path):
+        raise HTTPException(status_code=500, detail=message)
+    return FileResponse(
+        path=zip_path,
+        filename=os.path.basename(zip_path),
+        media_type="application/zip",
+    )
 
 
 @router.post("/restore")
