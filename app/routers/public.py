@@ -147,7 +147,7 @@ async def create_prenotazione(
         raise HTTPException(status_code=404, detail="Terreno non trovato.")
     if terreno.tipo_accesso == "bestiale" and user.role != "admin":
         raise HTTPException(status_code=403, detail="Questo terreno non è disponibile per le unità.")
-    if tipo_unita and terreno.tipo_accesso not in ("entrambi", tipo_unita):
+    if user.role != "admin" and tipo_unita and terreno.tipo_accesso not in ("entrambi", tipo_unita):
         raise HTTPException(
             status_code=403, detail=f"Questo terreno non è disponibile per la tua branca ({tipo_unita.capitalize()})."
         )

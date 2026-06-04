@@ -208,3 +208,38 @@ def test_bestiale_terrain_booking_blocked_for_units(client, session):
         follow_redirects=False,
     )
     assert response.status_code == 403
+
+
+def test_admin_can_reserve_all_terrains(client, session):
+    """Admin users must be able to book terrains with 'reparto', 'posto', 'bestiale' and 'entrambi' tipo_accesso."""
+    setup_admin(session)
+    client.post("/login", data={"username": "admin", "password": "admin", "login_role": "direzione"})
+
+    t_reparto = Terreno(
+        name="Reparto Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="reparto"
+    )
+    t_posto = Terreno(
+        name="Posto Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="posto"
+    )
+    t_bestiale = Terreno(
+        name="BeSTiale Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="bestiale"
+    )
+    t_entrambi = Terreno(
+        name="Entrambi Terrain", tags="SPORT", center_lat="0", center_lon="0", polygon="[]", tipo_accesso="entrambi"
+    )
+    session.add_all([t_reparto, t_posto, t_bestiale, t_entrambi])
+    session.commit()
+
+    for t in [t_reparto, t_posto, t_bestiale, t_entrambi]:
+        response = client.post(
+            "/prenotazioni",
+            data={
+                "terreno_id": str(t.id),
+                "start_date": "2026-07-25",
+                "start_slot": "6",
+                "duration_slots": "4",
+                "notes": "",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303  # redirect on success
