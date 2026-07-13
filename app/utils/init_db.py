@@ -115,7 +115,9 @@ def reset_and_init_db(
                             print(f"Warning: Unit '{u_name}' not found for pattuglia '{p_name}'. Skipping.")
                             continue
 
-                        exists = db.query(Pattuglia).filter(Pattuglia.name == p_name).first()
+                        exists = (
+                            db.query(Pattuglia).filter(Pattuglia.name == p_name, Pattuglia.unita_id == unita.id).first()
+                        )
                         if not exists:
                             new_patt = Pattuglia(name=p_name, capo_pattuglia=capo, unita_id=unita.id)
                             db.add(new_patt)
