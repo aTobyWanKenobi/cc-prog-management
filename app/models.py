@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -56,9 +56,10 @@ class Unita(Base):
 
 class Pattuglia(Base):
     __tablename__ = "pattuglie"
+    __table_args__ = (UniqueConstraint("name", "unita_id", name="uq_pattuglia_name_unita"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(unique=True, index=True)
+    name: Mapped[str] = mapped_column(index=True)
     capo_pattuglia: Mapped[str] = mapped_column()
     unita_id: Mapped[int] = mapped_column(ForeignKey("unita.id"))
 
