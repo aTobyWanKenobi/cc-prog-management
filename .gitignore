@@ -162,6 +162,9 @@ cython_debug/
 # VS Code
 .vscode/
 
+# Documentation (auto-generated)
+doc/
+
 # Local configuration
 config.local.yaml
 params.local.yaml
